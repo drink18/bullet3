@@ -20,6 +20,7 @@ SET(BulletDynamics_SRCS
 	ConstraintSolver/btSolve2LinearConstraint.cpp
 	ConstraintSolver/btTypedConstraint.cpp
 	ConstraintSolver/btUniversalConstraint.cpp
+    ConstraintSolver/btCustomSISolver.cpp
 	Dynamics/btDiscreteDynamicsWorld.cpp
 	Dynamics/btDiscreteDynamicsWorldMt.cpp
 	Dynamics/btSimulationIslandManagerMt.cpp
@@ -68,6 +69,7 @@ SET(ConstraintSolver_HDRS
 	ConstraintSolver/btSolverConstraint.h
 	ConstraintSolver/btTypedConstraint.h
 	ConstraintSolver/btUniversalConstraint.h
+    ConstraintSolver/btCustomSISolver.h
 )
 SET(Dynamics_HDRS
 	Dynamics/btActionInterface.h
