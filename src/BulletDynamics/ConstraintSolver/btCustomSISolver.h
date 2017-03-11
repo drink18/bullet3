@@ -31,4 +31,8 @@ protected:
     btAlignedObjectArray<btSolverBody> m_tmpSolverBodyPool;
     btConstraintArray m_tmpSolverContactConstraintPool;
 
+
+private:
+    void SolveContact(btPersistentManifold& manifold);
+
 };
