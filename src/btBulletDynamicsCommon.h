@@ -37,6 +37,7 @@ subject to the following restrictions:
 
 
 #include "BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h"
+#include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
 
 
 ///Vehicle simulation, with wheel contact simulated by raycasts

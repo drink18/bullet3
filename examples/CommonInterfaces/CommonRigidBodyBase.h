@@ -64,7 +64,8 @@ struct CommonRigidBodyBase : public CommonExampleInterface
 		m_broadphase = new btDbvtBroadphase();
 
 		///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
-		btSequentialImpulseConstraintSolver* sol = new btSequentialImpulseConstraintSolver;
+		//btSequentialImpulseConstraintSolver* sol = new btSequentialImpulseConstraintSolver;
+        btCustomSISolver* sol = new btCustomSISolver();
 		m_solver = sol;
 
 		m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);

@@ -24,7 +24,12 @@ public:
         , const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
         , btDispatcher* dispatcher) override;
     ///clear internal cached data and reset random seed
-    virtual	void	reset();
+    virtual	void	reset() override;
+
+    virtual btConstraintSolverType	getSolverType() const
+    {
+        return BT_SEQUENTIAL_IMPULSE_SOLVER;
+    }
 
 protected:
 

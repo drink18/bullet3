@@ -6,7 +6,11 @@
 #include "LinearMath/btAlignedObjectArray.h"
 
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
+#include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
 
+#define ARRAY_SIZE_Y 1
+#define ARRAY_SIZE_X 1 
+#define ARRAY_SIZE_Z 1 
 struct TestWei : public CommonRigidBodyBase
 {
     TestWei(struct GUIHelperInterface* helper)
@@ -46,8 +50,9 @@ void TestWei::initPhysics()
     groundTransform.setOrigin(btVector3(0, -50, 0));
 
     createRigidBody(0, groundTransform, groundShape, btVector4(0, 0, 1, 1));
+    m_solver = new btCustomSISolver();
 
-
+#if 0
     {
         // create dynamic bodies 
         btBoxShape* colShape = createBoxShape(btVector3(0.1f, 0.1f, 0.1f));
@@ -66,6 +71,50 @@ void TestWei::initPhysics()
 
         createRigidBody(mass, startTrans, colShape);
     }
+#endif
+{
+		//create a few dynamic rigidbodies
+		// Re-using the same collision is better for memory usage and performance
+
+		btBoxShape* colShape = createBoxShape(btVector3(.1,.1,.1));
+		
+
+		//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+		m_collisionShapes.push_back(colShape);
+
+		/// Create Dynamic Objects
+		btTransform startTransform;
+		startTransform.setIdentity();
+
+		btScalar	mass(1.f);
+
+		//rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool isDynamic = (mass != 0.f);
+
+		btVector3 localInertia(0,0,0);
+		if (isDynamic)
+			colShape->calculateLocalInertia(mass,localInertia);
+
+
+		for (int k=0;k<ARRAY_SIZE_Y;k++)
+		{
+			for (int i=0;i<ARRAY_SIZE_X;i++)
+			{
+				for(int j = 0;j<ARRAY_SIZE_Z;j++)
+				{
+					startTransform.setOrigin(btVector3(
+										btScalar(0.2*i),
+										btScalar(.2*k),
+										btScalar(0.2*j)));
+
+			
+					createRigidBody(mass,startTransform,colShape);
+					
+
+				}
+			}
+		}
+	}
 
     m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
