@@ -606,7 +606,7 @@ static PyObject* pybullet_setPhysicsEngineParameter(PyObject* self, PyObject* ar
 	int numSubSteps = -1;
 	int collisionFilterMode = -1;
 	double contactBreakingThreshold = -1;
-	int maxNumCmdPer1ms = -1;
+	int maxNumCmdPer1ms = -2;
 	b3PhysicsClientHandle sm = 0;
 
 	int physicsClientId = 0;
@@ -658,7 +658,8 @@ static PyObject* pybullet_setPhysicsEngineParameter(PyObject* self, PyObject* ar
 		{
 			b3PhysicsParamSetContactBreakingThreshold(command,contactBreakingThreshold);
 		}
-		if (maxNumCmdPer1ms>=0)
+		//-1 is disables the maxNumCmdPer1ms feature, allow it
+		if (maxNumCmdPer1ms>=-1)
 		{
 			b3PhysicsParamSetMaxNumCommandsPer1ms(command,maxNumCmdPer1ms);
 		}
@@ -2624,12 +2625,13 @@ static PyObject* pybullet_startStateLogging(PyObject* self, PyObject* args, PyOb
 	int loggingType = -1;
 	char* fileName = 0;
 	PyObject* objectUniqueIdsObj = 0;
+	int maxLogDof=-1;
 
-	static char *kwlist[] = { "loggingType", "fileName", "objectUniqueIds", "physicsClientId", NULL };
+	static char *kwlist[] = { "loggingType", "fileName", "objectUniqueIds", "maxLogDof", "physicsClientId", NULL };
 	int physicsClientId = 0;
 		
-	if (!PyArg_ParseTupleAndKeywords(args, keywds, "is|Oi", kwlist,
-		&loggingType, &fileName, &objectUniqueIdsObj,&physicsClientId))
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "is|Oii", kwlist,
+		&loggingType, &fileName, &objectUniqueIdsObj,&maxLogDof, &physicsClientId))
 		return NULL;
 
 	sm = getPhysicsClient(physicsClientId);
@@ -2660,6 +2662,10 @@ static PyObject* pybullet_startStateLogging(PyObject* self, PyObject* args, PyOb
 			}
 		}
 
+		if (maxLogDof>0)
+		{
+			b3StateLoggingSetMaxLogDof(commandHandle, maxLogDof);
+		}
 		
 		statusHandle = b3SubmitClientCommandAndWaitStatus(sm, commandHandle);
 		statusType = b3GetStatusType(statusHandle);
@@ -3834,10 +3840,10 @@ static PyObject* pybullet_getContactPointData(PyObject* self, PyObject* args, Py
 
 
 /// Render an image from the current timestep of the simulation, width, height are required, other args are optional
-// getCameraImage(w, h, view[16], projection[16], lightDir[3], lightColor[3], lightDist, hasShadow, lightAmbientCoeff, lightDiffuseCoeff, lightSpecularCoeff)
+// getCameraImage(w, h, view[16], projection[16], lightDir[3], lightColor[3], lightDist, hasShadow, lightAmbientCoeff, lightDiffuseCoeff, lightSpecularCoeff, renderer)
 static PyObject* pybullet_getCameraImage(PyObject* self, PyObject* args, PyObject *keywds)
 {
-	/// request an image from a simulated camera, using a software renderer.
+	/// request an image from a simulated camera, using software or hardware renderer.
 	struct b3CameraImageData imageData;
 	PyObject* objViewMat = 0, *objProjMat = 0, *lightDirObj = 0, *lightColorObj = 0;
 	int width, height;
@@ -3850,14 +3856,15 @@ static PyObject* pybullet_getCameraImage(PyObject* self, PyObject* args, PyObjec
     float lightAmbientCoeff = 0.6;
     float lightDiffuseCoeff = 0.35;
     float lightSpecularCoeff = 0.05;
+    int renderer = 0;
 	// inialize cmd
 	b3SharedMemoryCommandHandle command;
 	int physicsClientId = 0;
 	b3PhysicsClientHandle sm = 0;
 	// set camera resolution, optionally view, projection matrix, light direction, light color, light distance, shadow
-	static char *kwlist[] = { "width", "height", "viewMatrix", "projectionMatrix", "lightDirection", "lightColor", "lightDistance", "shadow", "lightAmbientCoeff", "lightDiffuseCoeff", "lightSpecularCoeff", "physicsClientId", NULL };
+	static char *kwlist[] = { "width", "height", "viewMatrix", "projectionMatrix", "lightDirection", "lightColor", "lightDistance", "shadow", "lightAmbientCoeff", "lightDiffuseCoeff", "lightSpecularCoeff", "renderer", "physicsClientId", NULL };
 
-	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|OOOOfifffi", kwlist, &width, &height, &objViewMat, &objProjMat, &lightDirObj, &lightColorObj, &lightDist, &hasShadow, &lightAmbientCoeff, &lightDiffuseCoeff, &lightSpecularCoeff,&physicsClientId))
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|OOOOfifffii", kwlist, &width, &height, &objViewMat, &objProjMat, &lightDirObj, &lightColorObj, &lightDist, &hasShadow, &lightAmbientCoeff, &lightDiffuseCoeff, &lightSpecularCoeff, &renderer, &physicsClientId))
 	{
 		return NULL;
 	}
@@ -3894,6 +3901,8 @@ static PyObject* pybullet_getCameraImage(PyObject* self, PyObject* args, PyObjec
     b3RequestCameraImageSetLightAmbientCoeff(command, lightAmbientCoeff);
     b3RequestCameraImageSetLightDiffuseCoeff(command, lightDiffuseCoeff);
     b3RequestCameraImageSetLightSpecularCoeff(command, lightSpecularCoeff);
+    
+    b3RequestCameraImageSelectRenderer(command, renderer);
 
 	if (b3CanSubmitCommand(sm))
 	{
@@ -5104,7 +5113,7 @@ static PyMethodDef SpamMethods[] = {
 
 	 { "getCameraImage",(PyCFunction)pybullet_getCameraImage, METH_VARARGS| METH_KEYWORDS,
 			"Render an image (given the pixel resolution width, height, camera viewMatrix "
-			", projectionMatrix, lightDirection, lightColor, lightDistance, shadow, lightAmbientCoeff, lightDiffuseCoeff, and lightSpecularCoeff), and return the "
+			", projectionMatrix, lightDirection, lightColor, lightDistance, shadow, lightAmbientCoeff, lightDiffuseCoeff, lightSpecularCoeff, and renderer), and return the "
 			"8-8-8bit RGB pixel data and floating point depth values"
 #ifdef PYBULLET_USE_NUMPY
 			" as NumPy arrays"
@@ -5371,6 +5380,10 @@ initpybullet(void)
   PyModule_AddIntConstant(m, "COV_ENABLE_GUI", COV_ENABLE_GUI);
   PyModule_AddIntConstant(m, "COV_ENABLE_SHADOWS", COV_ENABLE_SHADOWS);
   PyModule_AddIntConstant(m, "COV_ENABLE_WIREFRAME", COV_ENABLE_WIREFRAME);
+
+  PyModule_AddIntConstant(m, "ER_TINY_RENDERER", ER_TINY_RENDERER);
+  PyModule_AddIntConstant(m, "ER_BULLET_HARDWARE_OPENGL", ER_BULLET_HARDWARE_OPENGL);
+
   PyModule_AddIntConstant(m,"B3G_F1",B3G_F1);
 	PyModule_AddIntConstant(m,"B3G_F2",B3G_F2);
 	PyModule_AddIntConstant(m,"B3G_F3",B3G_F3);
