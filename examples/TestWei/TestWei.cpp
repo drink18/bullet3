@@ -8,7 +8,7 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
 
-#define ARRAY_SIZE_Y 1
+#define ARRAY_SIZE_Y 1 
 #define ARRAY_SIZE_X 1 
 #define ARRAY_SIZE_Z 1 
 

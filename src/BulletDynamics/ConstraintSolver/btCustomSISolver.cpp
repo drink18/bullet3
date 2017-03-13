@@ -24,7 +24,7 @@ namespace
 		btVector3 Jl = n; // linear part of J
 		btVector3 Ja = rXn; // angular part of J
 		btVector3 linVel = body->getLinearVelocity() + extImpl;
-		btVector3 angVel = body->getAngularVelocity();
+		btVector3 angVel = body->getAngularVelocity() + extImpl;
 		btScalar lambda = -(linVel.dot(Jl) + angVel.dot(Ja)) / effM;
 		linVel += Jl * lambda * invM;
 		angVel += Ja * lambda * invI;
@@ -46,7 +46,7 @@ namespace
 			btScalar invMA = bodyA->getInvMass();
 			if (invMA != 0)
 			{
-				btVector3 extImp = bodyA->getTotalForce() * invMA * dt;
+				btVector3 extImp = bodyA->getTotalForce() * invMA * dt / info.m_numIterations;;
 				btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
 				btVector3 nA = pt.m_normalWorldOnB;
 				btVector3 rXnA = rA.cross(nA);
@@ -58,7 +58,7 @@ namespace
 			btScalar invMB = bodyB->getInvMass();
 			if (invMB != 0)
 			{
-				btVector3 extImp = bodyB->getTotalForce() * invMB * dt;
+				btVector3 extImp = bodyB->getTotalForce() * invMB * dt / info.m_numIterations;
 				btVector3 rB = pt.getPositionWorldOnB() - bodyB->getWorldTransform().getOrigin();
 				btVector3 nB = - pt.m_normalWorldOnB;
 				btVector3 rXnB = rB.cross(nB);
@@ -69,7 +69,7 @@ namespace
 				btVector3 cptVel = bodyB->getLinearVelocity();
 				btVector3 angVel = bodyB->getAngularVelocity().cross(rB);
 				cptVel += angVel;
-				printf("%.3f\n", cptVel.x());
+				//printf("%.3f\n", cptVel.x());
 			}
 		}
 
@@ -82,6 +82,7 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 	, const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
 	, btDispatcher* dispatcher)
 {
+	
 	// apply external impulse
 	const btScalar dt = info.m_timeStep;
 	for (int i = 0; i < numBodies; ++i)
@@ -92,10 +93,10 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 			btVector3 extImp = bodyA->getTotalForce() * bodyA->getInvMass() * dt;
 			bodyA->setLinearVelocity(extImp + bodyA->getLinearVelocity());
 		}
-
 	}
 
-	for (int j = 0; j < 4; j++)
+	const int numIter = info.m_numIterations;
+	for (int j = 0; j <  numIter; j++)
 	{
 		for (int i = 0; i < numManifolds; ++i)
 		{
@@ -103,7 +104,6 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 		}
 	}
 
-	
 	return 0.0f;
 }
 
