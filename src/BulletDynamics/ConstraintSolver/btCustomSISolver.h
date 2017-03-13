@@ -38,6 +38,5 @@ protected:
 
 
 private:
-    void SolveContact(btPersistentManifold& manifold);
 
 };
