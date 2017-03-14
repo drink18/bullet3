@@ -18,14 +18,18 @@ namespace
 	void solve(btVector3& n, btVector3& rXn, btScalar invM, btVector3& invI, btRigidBody* body, btVector3& extImpl)
 	{
 		// compute effective mass
-		btScalar effM = n.x() * n.x() * invM + n.y() * n.y() * invM + n.z() * n.z() * invM +
-			rXn.x() * rXn.x() * invI.x() + rXn.y() * rXn.y() * invI.y() + rXn.z() * rXn.z() * invI.z();
+		//btScalar effM = n.x() * n.x() * invM + n.y() * n.y() * invM + n.z() * n.z() * invM +
+		//	rXn.x() * rXn.x() * invI.x() + rXn.y() * rXn.y() * invI.y() + rXn.z() * rXn.z() * invI.z();
+		btScalar effM = invM +  rXn.x() * rXn.x() * invI.x() + rXn.y() * rXn.y() * invI.y() + rXn.z() * rXn.z() * invI.z();
 
 		btVector3 Jl = n; // linear part of J
 		btVector3 Ja = rXn; // angular part of J
-		btVector3 linVel = body->getLinearVelocity() + extImpl;
-		btVector3 angVel = body->getAngularVelocity() + extImpl;
+		btVector3 linVel = body->getLinearVelocity() ;
+		btVector3 angVel = body->getAngularVelocity();
 		btScalar lambda = -(linVel.dot(Jl) + angVel.dot(Ja)) / effM;
+		if (lambda < 0)
+			lambda = 0;
+
 		linVel += Jl * lambda * invM;
 		angVel += Ja * lambda * invI;
 
@@ -46,7 +50,7 @@ namespace
 			btScalar invMA = bodyA->getInvMass();
 			if (invMA != 0)
 			{
-				btVector3 extImp = bodyA->getTotalForce() * invMA * dt / info.m_numIterations;;
+				btVector3 extImp = bodyA->getTotalForce() * invMA * dt ;
 				btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
 				btVector3 nA = pt.m_normalWorldOnB;
 				btVector3 rXnA = rA.cross(nA);
@@ -83,26 +87,27 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 	, btDispatcher* dispatcher)
 {
 	
-	// apply external impulse
-	const btScalar dt = info.m_timeStep;
-	for (int i = 0; i < numBodies; ++i)
-	{
-		btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(bodies[i]);
-		if (bodyA->getInvMass() != 0)
-		{
-			btVector3 extImp = bodyA->getTotalForce() * bodyA->getInvMass() * dt;
-			bodyA->setLinearVelocity(extImp + bodyA->getLinearVelocity());
-		}
-	}
-
+	
 	const int numIter = info.m_numIterations;
 	for (int j = 0; j <  numIter; j++)
 	{
+		// apply external impulse
+		const btScalar dt = info.m_timeStep;
+		for (int i = 0; i < numBodies; ++i)
+		{
+			btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(bodies[i]);
+			if (bodyA->getInvMass() != 0)
+			{
+				btVector3 extImp = bodyA->getTotalForce() * bodyA->getInvMass() * dt / info.m_numIterations;
+				bodyA->setLinearVelocity(extImp + bodyA->getLinearVelocity());
+			}
+		}
 		for (int i = 0; i < numManifolds; ++i)
 		{
 			SolveContact(*manifold[i], info);
 		}
 	}
+
 
 	return 0.0f;
 }

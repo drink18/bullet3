@@ -8,9 +8,9 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
 
-#define ARRAY_SIZE_Y 1 
-#define ARRAY_SIZE_X 1 
-#define ARRAY_SIZE_Z 1 
+#define ARRAY_SIZE_Y 3 
+#define ARRAY_SIZE_X 3 
+#define ARRAY_SIZE_Z 3 
 
 class TestWei : public CommonRigidBodyBase
 {
@@ -28,7 +28,7 @@ public:
 
 	void resetCamera()
 	{
-		float dist = 4;
+		float dist = 2;
 		float pitch = 52;
 		float yaw = 35;
 		float targetPos[3] = { 0, 0, 0 };
