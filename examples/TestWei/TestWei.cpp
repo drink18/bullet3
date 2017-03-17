@@ -9,8 +9,8 @@
 #include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
 
 #define ARRAY_SIZE_Y 3 
-#define ARRAY_SIZE_X 3 
-#define ARRAY_SIZE_Z 3 
+#define ARRAY_SIZE_X 1 
+#define ARRAY_SIZE_Z 1 
 
 class TestWei : public CommonRigidBodyBase
 {
@@ -56,26 +56,6 @@ void TestWei::initPhysics()
 	createRigidBody(0, groundTransform, groundShape, btVector4(0, 0, 1, 1));
 	m_solver = new btCustomSISolver();
 
-#if 0
-	{
-		// create dynamic bodies 
-		btBoxShape* colShape = createBoxShape(btVector3(0.1f, 0.1f, 0.1f));
-		m_collisionShapes.push_back(colShape);
-
-		// create dynamic body
-		//
-		btTransform startTrans;
-		startTrans.setOrigin(btVector3(0, 2, 0));
-
-
-		btScalar mass(1.0f);
-
-		btVector3 localInertia(0, 0, 0);
-		colShape->calculateLocalInertia(mass, localInertia);
-
-		createRigidBody(mass, startTrans, colShape);
-	}
-#endif
 	{
 		//create a few dynamic rigidbodies
 		// Re-using the same collision is better for memory usage and performance

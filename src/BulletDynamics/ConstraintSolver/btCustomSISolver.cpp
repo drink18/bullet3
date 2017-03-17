@@ -14,23 +14,39 @@ btCustomSISolver::~btCustomSISolver()
 
 void btCustomSISolver::solve(btSolverConstraint& c, btScalar dt)
 {
-    btVector3 linVel = c.m_body->getLinearVelocity() ;
-    btVector3 angVel = c.m_body->getAngularVelocity();
-    btScalar lambda = -(linVel.dot(c.m_Jl) + angVel.dot(c.m_Ja)) / c.m_effM;
+	btScalar jV1 = c.m_body1->getLinearVelocity().dot(c.m_Jl1) + c.m_body1->getAngularVelocity().dot(c.m_Ja1);
+	btScalar jV2 = c.m_body2->getLinearVelocity().dot(c.m_Jl2) + c.m_body2->getAngularVelocity().dot(c.m_Ja2);
+	btScalar lambda1 = -jV1 / c.m_effM;
+	btScalar lambda2 = -jV2 / c.m_effM;
 
-    btScalar  accuLambda = c.m_appliedImpulse + lambda;
-    accuLambda = accuLambda < 0 ? 0 : accuLambda;
+	btScalar  accuLambda1 = c.m_appliedImpulse1 + lambda1;
+	btScalar  accuLambda2 = c.m_appliedImpulse2 + lambda2;
+	accuLambda1 = accuLambda1 < 0 ? 0 : accuLambda1;
+	accuLambda2 = accuLambda2 < 0 ? 0 : accuLambda2;
 
-    btScalar l = accuLambda - c.m_appliedImpulse;
-    c.m_appliedImpulse = accuLambda;
 
-    linVel += c.m_Jl * l * c.m_invM;
-    angVel += c.m_Ja * l* c.m_invI;
+	btScalar l1 = accuLambda1 - c.m_appliedImpulse1;
+	btScalar l2 = accuLambda2 - c.m_appliedImpulse2;
+    c.m_appliedImpulse1 = accuLambda1;
+	c.m_appliedImpulse2 = accuLambda2;
 
-    c.m_body->setLinearVelocity(linVel);
-    c.m_body->setAngularVelocity(angVel);
+
+	c.m_body1->setLinearVelocity(c.m_body1->getLinearVelocity() + c.m_Jl1 * l1 * c.m_invM1);
+	c.m_body2->setLinearVelocity(c.m_body2->getLinearVelocity() + c.m_Jl2 * l2 * c.m_invM2);
+	c.m_body1->setAngularVelocity(c.m_body1->getAngularVelocity() + c.m_Ja1 * l1 * c.m_invI1);
+	c.m_body2->setAngularVelocity(c.m_body2->getAngularVelocity() + c.m_Ja2 * l2 * c.m_invI2);
 }
 
+namespace {
+	btScalar _computeBodyEffMass(const btVector3& invI, const btScalar invM, const btVector3& rXn)
+	{
+		btScalar effM1 = invM + rXn.x() * rXn.x() * invI.x()
+			+ rXn.y() * rXn.y() * invI.y()
+			+ rXn.z() * rXn.z() * invI.z()
+			+ rXn.z() * rXn.z() * invI.z();
+		return effM1;
+	}
+}
 void btCustomSISolver::setupAllContactConstratins(btPersistentManifold& manifold, const btContactSolverInfo& info)
 {
     const btScalar dt = info.m_timeStep;
@@ -42,44 +58,39 @@ void btCustomSISolver::setupAllContactConstratins(btPersistentManifold& manifold
         btRigidBody* bodyB = (btRigidBody*)btRigidBody::upcast(manifold.getBody1());
 
         btScalar invMA = bodyA->getInvMass();
-        if (invMA != 0)
-        {
-            btVector3 extImp = bodyA->getTotalForce() * invMA * dt ;
-            btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
-            btVector3 nA = pt.m_normalWorldOnB;
-            btVector3 rXnA = rA.cross(nA);
-            btMatrix3x3 invIMA = bodyA->getInvInertiaTensorWorld();
-            btVector3 invIA(invIMA[0][0], invIMA[1][1], invIMA[2][2]);
-
-            setupContactConstraint(bodyA, nA, rXnA, invIA);
-        }
-
         btScalar invMB = bodyB->getInvMass();
-        if (invMB != 0)
-        {
-            btVector3 extImp = bodyB->getTotalForce() * invMB * dt / info.m_numIterations;
-            btVector3 rB = pt.getPositionWorldOnB() - bodyB->getWorldTransform().getOrigin();
-            btVector3 nB = - pt.m_normalWorldOnB;
-            btVector3 rXnB = rB.cross(nB);
-            btMatrix3x3 invIMB = bodyB->getInvInertiaTensorWorld();
-            btVector3 invIB(invIMB[0][0], invIMB[1][1], invIMB[2][2]);
-            setupContactConstraint(bodyB, nB, rXnB, invIB);
-        }
+		if (invMA == 0 && invMB == 0)
+			continue;
+		
+		btSolverConstraint& c = m_tmpConstraintPool.expand();
+		c.m_body1 = bodyA;
+		c.m_body2 = bodyB;
+
+		btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
+		btVector3 nA = pt.m_normalWorldOnB;
+		btVector3 rXnA = rA.cross(nA);
+		btMatrix3x3 invIMA = bodyA->getInvInertiaTensorWorld();
+		btVector3 invIA(invIMA[0][0], invIMA[1][1], invIMA[2][2]);
+		btVector3 rB = pt.getPositionWorldOnB() - bodyB->getWorldTransform().getOrigin();
+		btVector3 nB = -pt.m_normalWorldOnB;
+		btVector3 rXnB = rB.cross(nB);
+		btMatrix3x3 invIMB = bodyB->getInvInertiaTensorWorld();
+		btVector3 invIB(invIMB[0][0], invIMB[1][1], invIMB[2][2]);
+
+
+		btScalar effM1 = _computeBodyEffMass(invIA, bodyA->getInvMass(), rXnA);
+		btScalar effM2 = _computeBodyEffMass(invIB, bodyB->getInvMass(), rXnB);
+		c.m_effM = effM1 + effM2;
+
+		c.m_Jl1 = nA;
+		c.m_Ja1 = rXnA;
+		c.m_Jl2 = nB;
+		c.m_Ja2 = rXnB;
+		c.m_invM1 = invMA;
+		c.m_invM2 = invMB;
+		c.m_invI1 = invIA;
+		c.m_invI2 = invIB;
     }
-}
-
-void btCustomSISolver::setupContactConstraint(btRigidBody* body, btVector3& n, btVector3& rXn, btVector3& invI)
-{
-    btSolverConstraint& c = m_tmpConstraintPool.expand();
-
-    c.m_Jl = n;
-    c.m_Ja = rXn;
-    c.m_effM = body->getInvMass() + rXn.x() * rXn.x() * invI.x()
-               + rXn.y() * rXn.y() * invI.y()
-               + rXn.z() * rXn.z() * invI.z();
-    c.m_body = body;
-    c.m_invI = invI;
-    c.m_invM = body->getInvMass();
 }
 
 void btCustomSISolver::solveAllContacts(btScalar dt)

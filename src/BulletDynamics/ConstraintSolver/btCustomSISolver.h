@@ -34,28 +34,37 @@ public:
 
     struct btSolverConstraint
     {
-        btScalar m_appliedImpulse;
-        btVector3 m_Jl; //linear part of J
-        btVector3 m_Ja; // angular part of J
+        btScalar m_appliedImpulse1;
+        btScalar m_appliedImpulse2;
+        btVector3 m_Jl1; //linear part of J
+        btVector3 m_Ja1; // angular part of J
+        btVector3 m_Jl2; //linear part of J
+        btVector3 m_Ja2; // angular part of J
         btScalar m_effM; // effective mass
-        btScalar m_invM; // inverse mass
-        btVector3 m_invI;  //inverse of inertial diag
-        btRigidBody* m_body; //linked rigid body
+        btScalar m_invM1;  //inver mass 1
+        btScalar m_invM2;  //inversed mass 2
+        btVector3 m_invI1;  //inverse of inertial diag
+        btVector3 m_invI2;  //inverse of inertial diag
+        btRigidBody* m_body1; //linked rigid body
+        btRigidBody* m_body2; //linked rigid body
 
         btSolverConstraint()
-            : m_appliedImpulse(0)
+            : m_appliedImpulse1(0)
+            , m_appliedImpulse2(0)
+			, m_body1(nullptr)
+			, m_body2(nullptr)
         {
         }
     };
 protected:
     void setupAllContactConstratins(btPersistentManifold& manifold, const btContactSolverInfo& info);
-    void setupContactConstraint(btRigidBody* body, btVector3& n, btVector3& rXn, btVector3& invI);
+    void setupContactConstraint(btRigidBody* body1, btRigidBody* body2, btVector3& n
+									, btVector3& rXn, btVector3& rXn2);
 
     void solveAllContacts(btScalar dt);
     void solve(btSolverConstraint& c, btScalar dt);
 protected:
 
-    btAlignedObjectArray<btSolverBody> m_tmpSolverBodyPool;
     btAlignedObjectArray<btSolverConstraint> m_tmpConstraintPool;
 private:
 
