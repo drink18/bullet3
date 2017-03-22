@@ -15,21 +15,18 @@ btCustomSISolver::~btCustomSISolver()
 void btCustomSISolver::solve(btSolverConstraint& c, btScalar dt)
 {
 	btScalar jV1 = c.m_body1->getLinearVelocity().dot(c.m_Jl1) + c.m_body1->getAngularVelocity().dot(c.m_Ja1);
-	btScalar jV2 = c.m_body2->getLinearVelocity().dot(c.m_Jl2) + c.m_body2->getAngularVelocity().dot(c.m_Ja2);
-	btScalar lambda1 = -jV1 / c.m_effM;
-	btScalar lambda2 = -jV2 / c.m_effM;
+	jV1 += c.m_body2->getLinearVelocity().dot(c.m_Jl2) + c.m_body2->getAngularVelocity().dot(c.m_Ja2);
+	btScalar lambda = -jV1 / c.m_effM;
 
-	btScalar  accuLambda1 = c.m_appliedImpulse1 + lambda1;
-	btScalar  accuLambda2 = c.m_appliedImpulse2 + lambda2;
+	btScalar  accuLambda1 = c.m_appliedImpulse1 + lambda;
+	btScalar  accuLambda2 = c.m_appliedImpulse2 + lambda;
 	accuLambda1 = accuLambda1 < 0 ? 0 : accuLambda1;
 	accuLambda2 = accuLambda2 < 0 ? 0 : accuLambda2;
 
-
 	btScalar l1 = accuLambda1 - c.m_appliedImpulse1;
 	btScalar l2 = accuLambda2 - c.m_appliedImpulse2;
-    c.m_appliedImpulse1 = accuLambda1;
+	c.m_appliedImpulse1 = accuLambda1;
 	c.m_appliedImpulse2 = accuLambda2;
-
 
 	c.m_body1->setLinearVelocity(c.m_body1->getLinearVelocity() + c.m_Jl1 * l1 * c.m_invM1);
 	c.m_body2->setLinearVelocity(c.m_body2->getLinearVelocity() + c.m_Jl2 * l2 * c.m_invM2);
