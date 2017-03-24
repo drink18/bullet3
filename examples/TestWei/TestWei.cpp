@@ -9,8 +9,8 @@
 #include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
 
 #define ARRAY_SIZE_Y 3 
-#define ARRAY_SIZE_X 1 
-#define ARRAY_SIZE_Z 1 
+#define ARRAY_SIZE_X 3 
+#define ARRAY_SIZE_Z 3 
 
 class TestWei : public CommonRigidBodyBase
 {

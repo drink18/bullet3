@@ -12,26 +12,45 @@ btCustomSISolver::~btCustomSISolver()
 
 }
 
+void btCustomSISolver::solvePenetration(btSolverConstraint& c, btScalar dt)
+{
+	if (c.m_pentrationRhs > 0)
+	{
+		btScalar jV = 0;
+		jV += c.m_pushLinearVelocity1.dot(c.m_Jl1) + c.m_pushAngularVelocity1.dot(c.m_Ja1);
+		jV += c.m_pushLinearVelocity2.dot(c.m_Jl2) + c.m_pushAngularVelocity2.dot(c.m_Ja2);
+		btScalar lambda = (-jV + c.m_pentrationRhs) / c.m_effM;
+
+		btScalar  accuLambda = c.m_appliedPeneImpulse + lambda;
+		accuLambda = accuLambda < 0 ? 0 : accuLambda;
+
+		btScalar impulse = accuLambda - c.m_appliedPeneImpulse;
+		c.m_appliedPeneImpulse = accuLambda;
+
+
+		c.m_pushLinearVelocity1 += c.m_Jl1 * impulse * c.m_invM1;
+		c.m_pushAngularVelocity1 += c.m_Ja1 * impulse * c.m_invI1;
+		c.m_pushLinearVelocity2 += c.m_Jl2 * impulse * c.m_invM2;
+		c.m_pushAngularVelocity2 += c.m_Ja2 * impulse * c.m_invI2;
+	}
+}
+
 void btCustomSISolver::solve(btSolverConstraint& c, btScalar dt)
 {
-	btScalar jV1 = c.m_body1->getLinearVelocity().dot(c.m_Jl1) + c.m_body1->getAngularVelocity().dot(c.m_Ja1);
-	jV1 += c.m_body2->getLinearVelocity().dot(c.m_Jl2) + c.m_body2->getAngularVelocity().dot(c.m_Ja2);
-	btScalar lambda = -jV1 / c.m_effM;
+	btScalar jV = c.m_body1->getLinearVelocity().dot(c.m_Jl1) + c.m_body1->getAngularVelocity().dot(c.m_Ja1);
+	jV += c.m_body2->getLinearVelocity().dot(c.m_Jl2) + c.m_body2->getAngularVelocity().dot(c.m_Ja2);
+	btScalar lambda = (-jV + c.m_rhs) / c.m_effM;
 
-	btScalar  accuLambda1 = c.m_appliedImpulse1 + lambda;
-	btScalar  accuLambda2 = c.m_appliedImpulse2 + lambda;
-	accuLambda1 = accuLambda1 < 0 ? 0 : accuLambda1;
-	accuLambda2 = accuLambda2 < 0 ? 0 : accuLambda2;
+	btScalar  accuLambda = c.m_appliedImpulse + lambda;
+	accuLambda = accuLambda < 0 ? 0 : accuLambda;
 
-	btScalar l1 = accuLambda1 - c.m_appliedImpulse1;
-	btScalar l2 = accuLambda2 - c.m_appliedImpulse2;
-	c.m_appliedImpulse1 = accuLambda1;
-	c.m_appliedImpulse2 = accuLambda2;
+	btScalar impulse = accuLambda - c.m_appliedImpulse;
+	c.m_appliedImpulse = accuLambda;
 
-	c.m_body1->setLinearVelocity(c.m_body1->getLinearVelocity() + c.m_Jl1 * l1 * c.m_invM1);
-	c.m_body2->setLinearVelocity(c.m_body2->getLinearVelocity() + c.m_Jl2 * l2 * c.m_invM2);
-	c.m_body1->setAngularVelocity(c.m_body1->getAngularVelocity() + c.m_Ja1 * l1 * c.m_invI1);
-	c.m_body2->setAngularVelocity(c.m_body2->getAngularVelocity() + c.m_Ja2 * l2 * c.m_invI2);
+	c.m_body1->setLinearVelocity(c.m_body1->getLinearVelocity() + c.m_Jl1 * impulse * c.m_invM1);
+	c.m_body2->setLinearVelocity(c.m_body2->getLinearVelocity() + c.m_Jl2 * impulse * c.m_invM2);
+	c.m_body1->setAngularVelocity(c.m_body1->getAngularVelocity() + c.m_Ja1 * impulse * c.m_invI1);
+	c.m_body2->setAngularVelocity(c.m_body2->getAngularVelocity() + c.m_Ja2 * impulse * c.m_invI2);
 }
 
 namespace {
@@ -46,19 +65,19 @@ namespace {
 }
 void btCustomSISolver::setupAllContactConstratins(btPersistentManifold& manifold, const btContactSolverInfo& info)
 {
-    const btScalar dt = info.m_timeStep;
-    for (int i = 0; i < manifold.getNumContacts(); ++i)
-    {
-        btManifoldPoint& pt = manifold.getContactPoint(i);
+	const btScalar dt = info.m_timeStep;
+	for (int i = 0; i < manifold.getNumContacts(); ++i)
+	{
+		btManifoldPoint& pt = manifold.getContactPoint(i);
 
-        btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(manifold.getBody0());
-        btRigidBody* bodyB = (btRigidBody*)btRigidBody::upcast(manifold.getBody1());
+		btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(manifold.getBody0());
+		btRigidBody* bodyB = (btRigidBody*)btRigidBody::upcast(manifold.getBody1());
 
-        btScalar invMA = bodyA->getInvMass();
-        btScalar invMB = bodyB->getInvMass();
+		btScalar invMA = bodyA->getInvMass();
+		btScalar invMB = bodyB->getInvMass();
 		if (invMA == 0 && invMB == 0)
 			continue;
-		
+
 		btSolverConstraint& c = m_tmpConstraintPool.expand();
 		c.m_body1 = bodyA;
 		c.m_body2 = bodyB;
@@ -87,50 +106,97 @@ void btCustomSISolver::setupAllContactConstratins(btPersistentManifold& manifold
 		c.m_invM2 = invMB;
 		c.m_invI1 = invIA;
 		c.m_invI2 = invIB;
-    }
+
+		btScalar penetration = pt.getDistance() + info.m_linearSlop;;
+		if (penetration < 0)
+		{
+			const float beta = 0.2f;
+			c.m_pentrationRhs = -beta* penetration / info.m_timeStep / c.m_effM;
+			//c.m_rhs = -beta* pt.getDistance() / info.m_timeStep;
+		}
+		else
+		{
+			c.m_pentrationRhs = 0.0f;
+			//c.m_rhs = 0.0f;
+		}
+	}
 }
 
 void btCustomSISolver::solveAllContacts(btScalar dt)
 {
-    for(int i = 0; i < m_tmpConstraintPool.size(); ++i)
-    {
-        btSolverConstraint& c = m_tmpConstraintPool[i];
-        solve(c, dt);
-    }
+	for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
+	{
+		btSolverConstraint& c = m_tmpConstraintPool[i];
+		solve(c, dt);
+	}
+}
+
+void btCustomSISolver::solveAllPenetrations(btScalar dt)
+{
+	for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
+	{
+		btSolverConstraint& c = m_tmpConstraintPool[i];
+		solvePenetration(c, dt);
+	}
+
+
+
 }
 
 btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
-                                      , int numManifolds, btTypedConstraint** constraints, int numConstraints
-                                      , const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
-                                      , btDispatcher* dispatcher)
+	, int numManifolds, btTypedConstraint** constraints, int numConstraints
+	, const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
+	, btDispatcher* dispatcher)
 {
 
-    m_tmpConstraintPool.clear();
+	m_tmpConstraintPool.clear();
 
-    for (int i = 0; i < numManifolds; ++i)
-    {
-        setupAllContactConstratins(*manifold[i], info);
-    }
+	for (int i = 0; i < numManifolds; ++i)
+	{
+		setupAllContactConstratins(*manifold[i], info);
+	}
 
-    const int numIter =  info.m_numIterations;
-    for (int j = 0; j <  numIter; j++)
-    {
-        // apply external impulse
-        const btScalar dt = info.m_timeStep;
-        for (int i = 0; i < numBodies; ++i)
-        {
-            btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(bodies[i]);
-            if (bodyA->getInvMass() != 0)
-            {
-                btVector3 extImp = bodyA->getTotalForce() * bodyA->getInvMass() * dt / numIter; 
-                bodyA->setLinearVelocity(extImp + bodyA->getLinearVelocity());
-            }
-        }
+	const btScalar dt = info.m_timeStep;
+	const int numIter = info.m_numIterations;
+	{
+		for (int j = 0; j < numIter; ++j)
+		{
+			solveAllPenetrations(dt);
+		}
+		for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
+		{
+			btSolverConstraint& c = m_tmpConstraintPool[i];
+			btTransform trans1;
+			btTransformUtil::integrateTransform(c.m_body1->getWorldTransform(), c.m_pushLinearVelocity1, c.m_pushAngularVelocity1,
+				dt, trans1);
+			btTransform trans2;
+			btTransformUtil::integrateTransform(c.m_body2->getWorldTransform(), c.m_pushLinearVelocity2, c.m_pushAngularVelocity2,
+				dt, trans2);
 
-        solveAllContacts(dt );
-    }
+			c.m_body1->setWorldTransform(trans1);
+			c.m_body2->setWorldTransform(trans2);
+		}
+	}
 
-    return 0.0f;
+	for (int j = 0; j < numIter; j++)
+	{
+		// apply external impulse
+		for (int i = 0; i < numBodies; ++i)
+		{
+			btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(bodies[i]);
+			if (bodyA->getInvMass() != 0)
+			{
+				btVector3 extImp = bodyA->getTotalForce() * bodyA->getInvMass() * dt / numIter;
+				bodyA->setLinearVelocity(extImp + bodyA->getLinearVelocity());
+			}
+		}
+
+		solveAllContacts(dt);
+	}
+
+
+
+	return 0.0f;
 }
 
 void btCustomSISolver::reset()
