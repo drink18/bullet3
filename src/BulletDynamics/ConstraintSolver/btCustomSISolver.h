@@ -63,6 +63,7 @@ public:
 			, m_pushAngularVelocity1(0, 0, 0)
 			, m_pushAngularVelocity2(0, 0, 0)
 			, m_rhs(0)
+			, m_pentrationRhs(0)
 			, m_body1(nullptr)
 			, m_body2(nullptr)
 		{

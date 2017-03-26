@@ -14,12 +14,12 @@ btCustomSISolver::~btCustomSISolver()
 
 void btCustomSISolver::solvePenetration(btSolverConstraint& c, btScalar dt)
 {
-	if (c.m_pentrationRhs > 0)
+	if (c.m_pentrationRhs != 0)
 	{
 		btScalar jV = 0;
 		jV += c.m_pushLinearVelocity1.dot(c.m_Jl1) + c.m_pushAngularVelocity1.dot(c.m_Ja1);
 		jV += c.m_pushLinearVelocity2.dot(c.m_Jl2) + c.m_pushAngularVelocity2.dot(c.m_Ja2);
-		btScalar lambda = (-jV + c.m_pentrationRhs) / c.m_effM;
+		btScalar lambda =  (-jV + c.m_pentrationRhs) / c.m_effM;
 
 		btScalar  accuLambda = c.m_appliedPeneImpulse + lambda;
 		accuLambda = accuLambda < 0 ? 0 : accuLambda;
@@ -111,7 +111,7 @@ void btCustomSISolver::setupAllContactConstratins(btPersistentManifold& manifold
 		if (penetration < 0)
 		{
 			const float beta = 0.2f;
-			c.m_pentrationRhs = -beta* penetration / info.m_timeStep / c.m_effM;
+			c.m_pentrationRhs = -beta* penetration / info.m_timeStep ;
 			//c.m_rhs = -beta* pt.getDistance() / info.m_timeStep;
 		}
 		else
@@ -163,6 +163,7 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 		{
 			solveAllPenetrations(dt);
 		}
+
 		for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
 		{
 			btSolverConstraint& c = m_tmpConstraintPool[i];
@@ -177,19 +178,19 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 			c.m_body2->setWorldTransform(trans2);
 		}
 	}
-
+	// apply external impulse
+	for (int i = 0; i < numBodies; ++i)
+	{
+		btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(bodies[i]);
+		if (bodyA->getInvMass() != 0)
+		{
+			btVector3 extImp = bodyA->getTotalForce() * bodyA->getInvMass() * dt;
+			bodyA->setLinearVelocity(extImp + bodyA->getLinearVelocity());
+		}
+	}
 	for (int j = 0; j < numIter; j++)
 	{
-		// apply external impulse
-		for (int i = 0; i < numBodies; ++i)
-		{
-			btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(bodies[i]);
-			if (bodyA->getInvMass() != 0)
-			{
-				btVector3 extImp = bodyA->getTotalForce() * bodyA->getInvMass() * dt / numIter;
-				bodyA->setLinearVelocity(extImp + bodyA->getLinearVelocity());
-			}
-		}
+		
 
 		solveAllContacts(dt);
 	}
