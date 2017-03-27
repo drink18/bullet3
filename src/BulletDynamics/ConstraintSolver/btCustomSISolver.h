@@ -32,6 +32,18 @@ public:
 		return BT_SEQUENTIAL_IMPULSE_SOLVER;
 	}
 
+	// body data used for solver
+	ATTRIBUTE_ALIGNED16(struct) btBodyData
+	{
+		BT_DECLARE_ALIGNED_ALLOCATOR(); 
+		btVector3 m_deltaLinearVelocity;
+		btVector3 m_deltaAngularVelocity;
+		btVector3 m_invM;
+		btVector3 m_pushLinVelocity;
+		btVector3 m_pushAngVelcity;
+
+		btRigidBody* m_originalBody;
+	};
 
 	struct btSolverConstraint
 	{
@@ -54,6 +66,8 @@ public:
 		btVector3 m_pushAngularVelocity2;
 		btRigidBody* m_body1; //linked rigid body
 		btRigidBody* m_body2; //linked rigid body
+		btBodyData m_solBody1;
+		btBodyData m_solBody2;
 
 		btSolverConstraint()
 			: m_appliedImpulse(0)
@@ -69,13 +83,14 @@ public:
 		{
 		}
 	};
+
 protected:
 	void setupAllContactConstratins(btPersistentManifold& manifold, const btContactSolverInfo& info);
 	void setupContactConstraint(btRigidBody* body1, btRigidBody* body2, btVector3& n
 									, btVector3& rXn, btVector3& rXn2);
 
-	void solveAllContacts(btScalar dt);
-	void solveAllPenetrations(btScalar dt);
+	void solveAllContacts(btScalar dt, int numIter);
+	void solveAllPenetrations(btScalar dt, int numIter);
 	void solve(btSolverConstraint& c, btScalar dt);
 	void solvePenetration(btSolverConstraint& c, btScalar dt);
 protected:

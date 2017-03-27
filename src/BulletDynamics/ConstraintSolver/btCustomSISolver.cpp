@@ -119,19 +119,25 @@ void btCustomSISolver::setupAllContactConstratins(btPersistentManifold& manifold
 			c.m_pentrationRhs = 0.0f;
 			//c.m_rhs = 0.0f;
 		}
+
+		// warm starting
+		c.m_appliedImpulse = pt.m_appliedImpulse;
 	}
 }
 
-void btCustomSISolver::solveAllContacts(btScalar dt)
+void btCustomSISolver::solveAllContacts(btScalar dt, int numIter)
 {
-	for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
+	for (int iter = 0; iter < numIter; ++iter)
 	{
-		btSolverConstraint& c = m_tmpConstraintPool[i];
-		solve(c, dt);
+		for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
+		{
+			btSolverConstraint& c = m_tmpConstraintPool[i];
+			solve(c, dt);
+		}
 	}
 }
 
-void btCustomSISolver::solveAllPenetrations(btScalar dt)
+void btCustomSISolver::solveAllPenetrations(btScalar dt, int numIter)
 {
 	for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
 	{
@@ -139,8 +145,19 @@ void btCustomSISolver::solveAllPenetrations(btScalar dt)
 		solvePenetration(c, dt);
 	}
 
+	for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
+	{
+		btSolverConstraint& c = m_tmpConstraintPool[i];
+		btTransform trans1;
+		btTransformUtil::integrateTransform(c.m_body1->getWorldTransform(), c.m_pushLinearVelocity1, c.m_pushAngularVelocity1,
+			dt, trans1);
+		btTransform trans2;
+		btTransformUtil::integrateTransform(c.m_body2->getWorldTransform(), c.m_pushLinearVelocity2, c.m_pushAngularVelocity2,
+			dt, trans2);
 
-
+		c.m_body1->setWorldTransform(trans1);
+		c.m_body2->setWorldTransform(trans2);
+	}
 }
 
 btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
@@ -158,26 +175,10 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 
 	const btScalar dt = info.m_timeStep;
 	const int numIter = info.m_numIterations;
-	{
-		for (int j = 0; j < numIter; ++j)
-		{
-			solveAllPenetrations(dt);
-		}
 
-		for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
-		{
-			btSolverConstraint& c = m_tmpConstraintPool[i];
-			btTransform trans1;
-			btTransformUtil::integrateTransform(c.m_body1->getWorldTransform(), c.m_pushLinearVelocity1, c.m_pushAngularVelocity1,
-				dt, trans1);
-			btTransform trans2;
-			btTransformUtil::integrateTransform(c.m_body2->getWorldTransform(), c.m_pushLinearVelocity2, c.m_pushAngularVelocity2,
-				dt, trans2);
+	// position error correction
+	solveAllPenetrations(dt, numIter);
 
-			c.m_body1->setWorldTransform(trans1);
-			c.m_body2->setWorldTransform(trans2);
-		}
-	}
 	// apply external impulse
 	for (int i = 0; i < numBodies; ++i)
 	{
@@ -188,14 +189,9 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 			bodyA->setLinearVelocity(extImp + bodyA->getLinearVelocity());
 		}
 	}
-	for (int j = 0; j < numIter; j++)
-	{
-		
 
-		solveAllContacts(dt);
-	}
-
-
+	// solver contact constraint
+	solveAllContacts(dt, numIter);
 
 	return 0.0f;
 }

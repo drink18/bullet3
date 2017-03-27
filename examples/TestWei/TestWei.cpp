@@ -7,10 +7,14 @@
 
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
+#include "BulletDynamics/MLCPSolvers/btDantzigSolver.h"
+#include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
+#include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
+#include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 3 
-#define ARRAY_SIZE_X 3 
-#define ARRAY_SIZE_Z 3 
+#define ARRAY_SIZE_Y 5 
+#define ARRAY_SIZE_X 1 
+#define ARRAY_SIZE_Z 1 
 
 class TestWei : public CommonRigidBodyBase
 {
@@ -29,7 +33,7 @@ public:
 	void resetCamera()
 	{
 		float dist = 2;
-		float pitch = 52;
+		float pitch = 0;
 		float yaw = 35;
 		float targetPos[3] = { 0, 0, 0 };
 		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
@@ -118,9 +122,10 @@ void TestWei::createEmptyDynamicsWorld()
 	m_broadphase = new btDbvtBroadphase();
 
 	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
-	//btSequentialImpulseConstraintSolver* sol = new btSequentialImpulseConstraintSolver;
-	btCustomSISolver* sol = new btCustomSISolver();
-	m_solver = sol;
+	m_solver = new btSequentialImpulseConstraintSolver;
+	//m_solver = new btCustomSISolver();
+	//btDantzigSolver* mlcp = new btDantzigSolver();
+	//m_solver = new btMLCPSolver(mlcp);
 
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
 
