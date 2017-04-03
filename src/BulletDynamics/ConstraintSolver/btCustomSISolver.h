@@ -33,19 +33,29 @@ public:
 	}
 
 	// body data used for solver
-	ATTRIBUTE_ALIGNED16(struct) btBodyData
+	ATTRIBUTE_ALIGNED16(struct)  btVelocityAccumulator
 	{
 		BT_DECLARE_ALIGNED_ALLOCATOR(); 
-		btVector3 m_deltaLinearVelocity;
-		btVector3 m_deltaAngularVelocity;
+		btVector3 m_externalForce;
+		btVector3 m_linearVelocity;
+		btVector3 m_angularVelocity;
 		btVector3 m_invM;
 		btVector3 m_pushLinVelocity;
 		btVector3 m_pushAngVelcity;
 
 		btRigidBody* m_originalBody;
+
+		btVelocityAccumulator()
+			: m_angularVelocity(0, 0, 0)
+			, m_linearVelocity(0, 0, 0)
+			, m_pushLinVelocity(0, 0, 0)
+			, m_pushAngVelcity(0, 0, 0)
+			, m_originalBody(nullptr)
+		{
+		}
 	};
 
-	struct btSolverConstraint
+	struct btSIConstraintInfo
 	{
 		btScalar m_appliedImpulse;
 		btScalar m_appliedPeneImpulse;
@@ -66,10 +76,12 @@ public:
 		btVector3 m_pushAngularVelocity2;
 		btRigidBody* m_body1; //linked rigid body
 		btRigidBody* m_body2; //linked rigid body
-		btBodyData m_solBody1;
-		btBodyData m_solBody2;
 
-		btSolverConstraint()
+		int m_accumId1;
+		int m_accumId2;
+		btManifoldPoint* m_origManifoldPoint;
+
+		btSIConstraintInfo()
 			: m_appliedImpulse(0)
 			, m_appliedPeneImpulse(0)
 			, m_pushLinearVelocity1(0, 0, 0)
@@ -80,22 +92,24 @@ public:
 			, m_pentrationRhs(0)
 			, m_body1(nullptr)
 			, m_body2(nullptr)
+			, m_origManifoldPoint(nullptr)
 		{
 		}
 	};
 
 protected:
-	void setupAllContactConstratins(btPersistentManifold& manifold, const btContactSolverInfo& info);
-	void setupContactConstraint(btRigidBody* body1, btRigidBody* body2, btVector3& n
-									, btVector3& rXn, btVector3& rXn2);
+	void setupAllContactConstraints(btPersistentManifold& manifold, const btContactSolverInfo& info);
+	void initAccumulator(btVelocityAccumulator& accum, btRigidBody* body, const btContactSolverInfo& info);
+	void initAllAccumulators(btCollisionObject** bodies, int numBodies, const btContactSolverInfo& info);
 
-	void solveAllContacts(btScalar dt, int numIter);
-	void solveAllPenetrations(btScalar dt, int numIter);
-	void solve(btSolverConstraint& c, btScalar dt);
-	void solvePenetration(btSolverConstraint& c, btScalar dt);
+	void solveAllContacts(const btContactSolverInfo& info, int numIter);
+	void solveAllPenetrations(const btContactSolverInfo& info, int numIter);
+	void solve(btSIConstraintInfo& c, const btContactSolverInfo& info);
+	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
 protected:
 
-	btAlignedObjectArray<btSolverConstraint> m_tmpConstraintPool;
+	btAlignedObjectArray<btSIConstraintInfo> m_tmpConstraintPool;
+	btAlignedObjectArray<btVelocityAccumulator> m_accumulatorPool;
 private:
 
 };

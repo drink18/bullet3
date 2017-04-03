@@ -12,7 +12,7 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 5 
+#define ARRAY_SIZE_Y 1 
 #define ARRAY_SIZE_X 1 
 #define ARRAY_SIZE_Z 1 
 
@@ -96,7 +96,7 @@ void TestWei::initPhysics()
 						btScalar(0.2*j)));
 
 
-					createRigidBody(mass, startTransform, colShape);
+					createRigidBody(mass * (1 + (ARRAY_SIZE_Y - k - 1) * 10) , startTransform, colShape);
 				}
 			}
 		}
@@ -122,8 +122,8 @@ void TestWei::createEmptyDynamicsWorld()
 	m_broadphase = new btDbvtBroadphase();
 
 	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
-	m_solver = new btSequentialImpulseConstraintSolver;
-	//m_solver = new btCustomSISolver();
+	//m_solver = new btSequentialImpulseConstraintSolver;
+	m_solver = new btCustomSISolver();
 	//btDantzigSolver* mlcp = new btDantzigSolver();
 	//m_solver = new btMLCPSolver(mlcp);
 
