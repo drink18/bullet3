@@ -12,7 +12,7 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 1 
+#define ARRAY_SIZE_Y 3 
 #define ARRAY_SIZE_X 1 
 #define ARRAY_SIZE_Z 1 
 
@@ -63,9 +63,7 @@ void TestWei::initPhysics()
 	{
 		//create a few dynamic rigidbodies
 		// Re-using the same collision is better for memory usage and performance
-
 		btBoxShape* colShape = createBoxShape(btVector3(.1, .1, .1));
-
 
 		//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
 		m_collisionShapes.push_back(colShape);

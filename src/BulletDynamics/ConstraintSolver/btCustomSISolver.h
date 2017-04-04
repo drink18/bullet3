@@ -70,12 +70,6 @@ public:
 		btVector3 m_invI2;  //inverse of inertial diag
 		btScalar m_rhs;
 		btScalar m_pentrationRhs;
-		btVector3 m_pushLinearVelocity1;
-		btVector3 m_pushLinearVelocity2;
-		btVector3 m_pushAngularVelocity1;
-		btVector3 m_pushAngularVelocity2;
-		btRigidBody* m_body1; //linked rigid body
-		btRigidBody* m_body2; //linked rigid body
 
 		int m_accumId1;
 		int m_accumId2;
@@ -84,14 +78,8 @@ public:
 		btSIConstraintInfo()
 			: m_appliedImpulse(0)
 			, m_appliedPeneImpulse(0)
-			, m_pushLinearVelocity1(0, 0, 0)
-			, m_pushLinearVelocity2(0, 0, 0)
-			, m_pushAngularVelocity1(0, 0, 0)
-			, m_pushAngularVelocity2(0, 0, 0)
 			, m_rhs(0)
 			, m_pentrationRhs(0)
-			, m_body1(nullptr)
-			, m_body2(nullptr)
 			, m_origManifoldPoint(nullptr)
 		{
 		}
@@ -99,17 +87,16 @@ public:
 
 protected:
 	void setupAllContactConstraints(btPersistentManifold& manifold, const btContactSolverInfo& info);
-	void initAccumulator(btVelocityAccumulator& accum, btRigidBody* body, const btContactSolverInfo& info);
+	void initAccumulator(btVelocityAccumulator& accum, btCollisionObject* body, const btContactSolverInfo& info);
 	void initAllAccumulators(btCollisionObject** bodies, int numBodies, const btContactSolverInfo& info);
+	int getOrAllocateAccumulator(btCollisionObject* btBody, const btContactSolverInfo& info);
 
 	void solveAllContacts(const btContactSolverInfo& info, int numIter);
 	void solveAllPenetrations(const btContactSolverInfo& info, int numIter);
 	void solve(btSIConstraintInfo& c, const btContactSolverInfo& info);
 	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
-protected:
 
+protected:
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpConstraintPool;
 	btAlignedObjectArray<btVelocityAccumulator> m_accumulatorPool;
-private:
-
 };

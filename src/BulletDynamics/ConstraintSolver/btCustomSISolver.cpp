@@ -20,8 +20,8 @@ void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 		btVelocityAccumulator& accu1 = m_accumulatorPool[c.m_accumId1];
 		btVelocityAccumulator& accu2 = m_accumulatorPool[c.m_accumId2];
 
-		jV += c.m_pushLinearVelocity1.dot(c.m_Jl1) + c.m_pushAngularVelocity1.dot(c.m_Ja1);
-		jV += c.m_pushLinearVelocity2.dot(c.m_Jl2) + c.m_pushAngularVelocity2.dot(c.m_Ja2);
+		jV += accu1.m_pushLinVelocity.dot(c.m_Jl1) + accu1.m_pushAngVelcity.dot(c.m_Ja1);
+		jV += accu2.m_pushLinVelocity.dot(c.m_Jl2) + accu2.m_pushAngVelcity.dot(c.m_Ja2);
 		btScalar lambda =  (-jV + c.m_pentrationRhs) / c.m_effM;
 
 		btScalar  accuLambda = c.m_appliedPeneImpulse + lambda;
@@ -30,11 +30,10 @@ void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 		btScalar impulse = accuLambda - c.m_appliedPeneImpulse;
 		c.m_appliedPeneImpulse = accuLambda;
 
-
-		c.m_pushLinearVelocity1 += c.m_Jl1 * impulse * c.m_invM1;
-		c.m_pushAngularVelocity1 += c.m_Ja1 * impulse * c.m_invI1;
-		c.m_pushLinearVelocity2 += c.m_Jl2 * impulse * c.m_invM2;
-		c.m_pushAngularVelocity2 += c.m_Ja2 * impulse * c.m_invI2;
+		accu1.m_pushLinVelocity += c.m_Jl1 * impulse * c.m_invM1;
+		accu1.m_pushAngVelcity += c.m_Ja1 * impulse * c.m_invI1;
+		accu2.m_pushLinVelocity += c.m_Jl2 * impulse * c.m_invM2;
+		accu2.m_pushAngVelcity += c.m_Ja2 * impulse * c.m_invI2;
 	}
 }
 
@@ -70,23 +69,43 @@ namespace {
 	}
 }
 
-void btCustomSISolver::initAccumulator(btVelocityAccumulator& accum, btRigidBody* body, const btContactSolverInfo& info)
+void btCustomSISolver::initAccumulator(btVelocityAccumulator& accum, btCollisionObject* body, const btContactSolverInfo& info)
 {
-	accum.m_externalForce = body->getTotalForce() * body->getInvMass() * info.m_timeStep;
-	accum.m_linearVelocity = body->getLinearVelocity() + accum.m_externalForce;
-	accum.m_angularVelocity = body->getAngularVelocity();
-	accum.m_originalBody = body;
+	
+	btRigidBody* rigidBody = btRigidBody::upcast(body);
+	if (rigidBody)
+	{
+		accum.m_externalForce = rigidBody->getTotalForce() * rigidBody->getInvMass() * info.m_timeStep;
+		accum.m_linearVelocity = rigidBody->getLinearVelocity() + accum.m_externalForce;
+		accum.m_angularVelocity = rigidBody->getAngularVelocity();
+		accum.m_originalBody = rigidBody;
+	}
+	else
+	{
+	}
+}
+
+int btCustomSISolver::getOrAllocateAccumulator(btCollisionObject* btBody, const btContactSolverInfo& info)
+{
+	int accumId = btBody->getCompanionId();
+
+	if (accumId < 0)
+	{
+		accumId = m_accumulatorPool.size();
+		btBody->setCompanionId(accumId);
+		m_accumulatorPool.expand();
+		initAccumulator(m_accumulatorPool[accumId], btBody, info);
+	}
+
+	return accumId;
 }
 
 void btCustomSISolver::initAllAccumulators(btCollisionObject** bodies, int numBodies, const btContactSolverInfo& info)
 {
 	m_accumulatorPool.reserve(numBodies);
-	m_accumulatorPool.resize(numBodies);
-
 	for (int i = 0; i < numBodies; ++i)
 	{
-		bodies[i]->setCompanionId(i);
-		initAccumulator(m_accumulatorPool[i], (btRigidBody*) bodies[i], info);
+		int id = getOrAllocateAccumulator(bodies[i], info);
 	}
 }
 
@@ -106,11 +125,9 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 			continue;
 
 		btSIConstraintInfo& c = m_tmpConstraintPool.expand();
-		c.m_accumId1 = bodyA->getCompanionId();
-		c.m_accumId2 = bodyB->getCompanionId();
-
-		c.m_body1 = bodyA;
-		c.m_body2 = bodyB;
+		
+		c.m_accumId1 = getOrAllocateAccumulator(bodyA, info);
+		c.m_accumId2 = getOrAllocateAccumulator(bodyB, info);
 
 		btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
 		btVector3 nA = pt.m_normalWorldOnB;
@@ -192,18 +209,14 @@ void btCustomSISolver::solveAllPenetrations(const btContactSolverInfo& info, int
 		solvePenetration(c, dt);
 	}
 
-	for (int i = 0; i < m_tmpConstraintPool.size(); ++i)
+	for (int i = 0; i < m_accumulatorPool.size(); ++i)
 	{
-		btSIConstraintInfo& c = m_tmpConstraintPool[i];
-		btTransform trans1;
-		btTransformUtil::integrateTransform(c.m_body1->getWorldTransform(), c.m_pushLinearVelocity1, c.m_pushAngularVelocity1,
-			dt, trans1);
-		btTransform trans2;
-		btTransformUtil::integrateTransform(c.m_body2->getWorldTransform(), c.m_pushLinearVelocity2, c.m_pushAngularVelocity2,
-			dt, trans2);
-
-		c.m_body1->setWorldTransform(trans1);
-		c.m_body2->setWorldTransform(trans2);
+		btVelocityAccumulator& accu = m_accumulatorPool[i];
+		btTransform trans;
+		btTransformUtil::integrateTransform(accu.m_originalBody->getWorldTransform(), accu.m_pushLinVelocity, 
+				accu.m_angularVelocity, dt, trans);
+		accu.m_originalBody->setWorldTransform(trans);
+	
 	}
 }
 
@@ -229,7 +242,6 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 	// position error correction
 	solveAllPenetrations(info, numIter);
 
-
 	// solver contact constraint
 	solveAllContacts(info, numIter);
 
@@ -238,5 +250,4 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 
 void btCustomSISolver::reset()
 {
-
 }
