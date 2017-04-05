@@ -52,10 +52,10 @@ void btCustomSISolver::solve(btSIConstraintInfo& c, const btContactSolverInfo& i
 	btScalar impulse = accuLambda - c.m_appliedImpulse;
 	c.m_appliedImpulse = accuLambda;
 
-	accum1.m_linearVelocity = accum1.m_linearVelocity + c.m_Jl1 * impulse * c.m_invM1;
-	accum2.m_linearVelocity = accum2.m_linearVelocity + c.m_Jl2 * impulse * c.m_invM2;
-	accum1.m_angularVelocity = accum1.m_angularVelocity + c.m_Ja1 * impulse * c.m_invI1;
-	accum2.m_angularVelocity = accum2.m_angularVelocity + c.m_Ja2 * impulse * c.m_invI2;
+	accum1.m_linearVelocity += c.m_Jl1 * impulse * c.m_invM1;
+	accum2.m_linearVelocity += c.m_Jl2 * impulse * c.m_invM2;
+	accum1.m_angularVelocity += c.m_Ja1 * impulse * c.m_invI1;
+	accum2.m_angularVelocity += c.m_Ja2 * impulse * c.m_invI2;
 }
 
 namespace {
@@ -165,7 +165,7 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		else
 		{
 			c.m_pentrationRhs = 0.0f;
-			//c.m_rhs = 0.0f;
+			c.m_rhs = 0.0f;
 		}
 
 		// warm starting
