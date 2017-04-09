@@ -167,8 +167,8 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		if (penetration < 0)
 		{
 			const float beta = 0.2f;
-			c.m_pentrationRhs = -beta* penetration / info.m_timeStep ;
-			//c.m_rhs = -beta* pt.getDistance() / info.m_timeStep;
+			//c.m_pentrationRhs = -beta* penetration / info.m_timeStep ;
+			c.m_rhs = -beta* pt.getDistance() / info.m_timeStep;
 		}
 		else
 		{
@@ -186,8 +186,6 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* bodyB, btManifoldPoint& pt, 
 		const btContactSolverInfo& info)
 {
-
-
 	btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
 	btVector3 nA = pt.m_normalWorldOnB;
 	btVector3 rXnA = rA.cross(nA);
@@ -213,8 +211,9 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 	pt.m_lateralFrictionDir1 = vel - relVel * nA;
 	if (pt.m_lateralFrictionDir1.length2() > SIMD_EPSILON)
 	{
+        pt.m_lateralFrictionDir1.normalize();
 		btSIConstraintInfo& c = m_tmpFrictionConstraintPool.expand();
-		c.m_frcitionIdx = m_tmpContactConstraintPool.size();
+		c.m_frcitionIdx = m_tmpContactConstraintPool.size() - 1;
 		c.m_accumId1 = getOrAllocateAccumulator(bodyA, info);
 		c.m_accumId2 = getOrAllocateAccumulator(bodyB, info);
 
@@ -224,9 +223,9 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 		btScalar effM2 = _computeBodyEffMass(invIB, bodyB->getInvMass(), rXnB);
 		c.m_effM = effM1 + effM2;
 
-		c.m_Jl1 = pt.m_lateralFrictionDir1;
+		c.m_Jl1 = -pt.m_lateralFrictionDir1;
 		c.m_Ja1 = rA.cross(c.m_Jl1);
-		c.m_Jl2 = -pt.m_lateralFrictionDir1;
+		c.m_Jl2 = pt.m_lateralFrictionDir1;
 		c.m_Ja2 = rB.cross(c.m_Jl2);
 		c.m_invM1 = bodyA->getInvMass();
 		c.m_invM2 = bodyB->getInvMass();
@@ -245,9 +244,6 @@ void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 	}
 
 	solveFriction(info);
-
-	
-
 }
 
 void btCustomSISolver::solveFriction(const btContactSolverInfo& info)
@@ -280,7 +276,6 @@ void btCustomSISolver::solveAllPenetrations(const btContactSolverInfo& info, int
 		btTransformUtil::integrateTransform(accu.m_originalBody->getWorldTransform(), accu.m_pushLinVelocity, 
 				accu.m_angularVelocity, dt, trans);
 		accu.m_originalBody->setWorldTransform(trans);
-	
 	}
 }
 
