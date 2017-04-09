@@ -167,8 +167,8 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		if (penetration < 0)
 		{
 			const float beta = 0.2f;
-			//c.m_pentrationRhs = -beta* penetration / info.m_timeStep ;
-			c.m_rhs = -beta* pt.getDistance() / info.m_timeStep;
+			c.m_pentrationRhs = -beta* penetration / info.m_timeStep;
+			// c.m_rhs = -beta* pt.getDistance() / info.m_timeStep;
 		}
 		else
 		{
@@ -207,6 +207,7 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 
 	btVector3 vel = vel1 - vel2;
 	btScalar relVel = nA.dot(vel);
+    //printf("nA = %.3f, %.3f, %.3f, revVel = %.3f\n", nA.getX(), nA.getY(), nA.getZ(), relVel);
 
 	pt.m_lateralFrictionDir1 = vel - relVel * nA;
 	if (pt.m_lateralFrictionDir1.length2() > SIMD_EPSILON)
@@ -223,9 +224,9 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 		btScalar effM2 = _computeBodyEffMass(invIB, bodyB->getInvMass(), rXnB);
 		c.m_effM = effM1 + effM2;
 
-		c.m_Jl1 = -pt.m_lateralFrictionDir1;
+		c.m_Jl1 = pt.m_lateralFrictionDir1;
 		c.m_Ja1 = rA.cross(c.m_Jl1);
-		c.m_Jl2 = pt.m_lateralFrictionDir1;
+		c.m_Jl2 = -pt.m_lateralFrictionDir1;
 		c.m_Ja2 = rB.cross(c.m_Jl2);
 		c.m_invM1 = bodyA->getInvMass();
 		c.m_invM2 = bodyB->getInvMass();
@@ -314,6 +315,7 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 
 		accum.m_originalBody->setLinearVelocity(accum.m_linearVelocity);
 		accum.m_originalBody->setAngularVelocity(accum.m_angularVelocity);
+        accum.m_originalBody->setCompanionId(-1);
 	}
 
 	for (int i = 0; i < m_tmpContactConstraintPool.size(); ++i)
