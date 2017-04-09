@@ -73,12 +73,10 @@ public:
 		btScalar m_upperLimit;
 		btScalar m_lowerLimit;
 
-		btVector3 m_lateralFrictionDir1;
-		btVector3 m_lateralFrictionDir2;
-
 		int m_accumId1;
 		int m_accumId2;
 		btManifoldPoint* m_origManifoldPoint;
+		int m_frcitionIdx;
 
 		btSIConstraintInfo()
 			: m_appliedImpulse(0)
@@ -86,22 +84,27 @@ public:
 			, m_rhs(0)
 			, m_pentrationRhs(0)
 			, m_origManifoldPoint(nullptr)
+			, m_frcitionIdx(-1)
 		{
 		}
 	};
 
 protected:
 	void setupAllContactConstraints(btPersistentManifold& manifold, const btContactSolverInfo& info);
+	void setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* bodyB, btManifoldPoint& pt, 
+		const btContactSolverInfo& info);
 	void initAccumulator(btVelocityAccumulator& accum, btCollisionObject* body, const btContactSolverInfo& info);
 	void initAllAccumulators(btCollisionObject** bodies, int numBodies, const btContactSolverInfo& info);
 	int getOrAllocateAccumulator(btCollisionObject* btBody, const btContactSolverInfo& info);
 
-	void solveAllContacts(const btContactSolverInfo& info, int numIter);
+	void solveAllContacts(const btContactSolverInfo& info);
 	void solveAllPenetrations(const btContactSolverInfo& info, int numIter);
-	void solve(btSIConstraintInfo& c, const btContactSolverInfo& info);
+	void solve(btSIConstraintInfo& c);
 	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
+	void solveFriction(const btContactSolverInfo& c);
 
 protected:
-	btAlignedObjectArray<btSIConstraintInfo> m_tmpConstraintPool;
+	btAlignedObjectArray<btSIConstraintInfo> m_tmpContactConstraintPool;
+	btAlignedObjectArray<btSIConstraintInfo> m_tmpFrictionConstraintPool;
 	btAlignedObjectArray<btVelocityAccumulator> m_accumulatorPool;
 };
