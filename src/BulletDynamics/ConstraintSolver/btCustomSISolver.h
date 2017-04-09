@@ -70,6 +70,11 @@ public:
 		btVector3 m_invI2;  //inverse of inertial diag
 		btScalar m_rhs;
 		btScalar m_pentrationRhs;
+		btScalar m_upperLimit;
+		btScalar m_lowerLimit;
+
+		btVector3 m_lateralFrictionDir1;
+		btVector3 m_lateralFrictionDir2;
 
 		int m_accumId1;
 		int m_accumId2;

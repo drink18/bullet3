@@ -47,8 +47,14 @@ void btCustomSISolver::solve(btSIConstraintInfo& c, const btContactSolverInfo& i
 	btScalar lambda = (-jV + c.m_rhs) / c.m_effM;
 
 	btScalar  accuLambda = c.m_appliedImpulse + lambda;
-	accuLambda = accuLambda < 0 ? 0 : accuLambda;
-
+	if (accuLambda > c.m_upperLimit)
+	{
+		accuLambda = c.m_upperLimit;
+	}
+	else if(accuLambda < c.m_lowerLimit)
+	{
+		accuLambda = c.m_lowerLimit;
+	}
 	btScalar impulse = accuLambda - c.m_appliedImpulse;
 	c.m_appliedImpulse = accuLambda;
 
@@ -154,6 +160,8 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		c.m_invI1 = invIA;
 		c.m_invI2 = invIB;
 		c.m_origManifoldPoint = &pt;
+		c.m_upperLimit = 1e10f;
+		c.m_lowerLimit = 0;
 
 		btScalar penetration = pt.getDistance() + info.m_linearSlop;;
 		if (penetration < 0)
@@ -170,6 +178,19 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 
 		// warm starting
 		c.m_appliedImpulse = pt.m_appliedImpulse;
+
+		// friction
+		btVector3  vel1;
+		btVector3  vel2;
+
+		vel1 = bodyA->getAngularVelocity().cross(rA) + bodyA->getLinearVelocity();
+		vel2 = bodyB->getAngularVelocity().cross(rB) + bodyB->getLinearVelocity();
+
+		btVector3 vel = vel1 - vel2;
+		btScalar relVel = nA.dot(vel);
+		c.m_lateralFrictionDir1 = vel - relVel * nA;
+		c.m_lateralFrictionDir2 = c.m_lateralFrictionDir1.cross(nA);
+
 	}
 }
 
