@@ -102,6 +102,7 @@ protected:
 	void solve(btSIConstraintInfo& c);
 	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
 	void solveFriction(const btContactSolverInfo& c);
+	void finishSolving();
 
 protected:
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpContactConstraintPool;

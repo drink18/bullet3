@@ -12,9 +12,9 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 1 
-#define ARRAY_SIZE_X 2 
-#define ARRAY_SIZE_Z 1
+#define ARRAY_SIZE_Y 5
+#define ARRAY_SIZE_X 5 
+#define ARRAY_SIZE_Z 5 
 
 class TestWei : public CommonRigidBodyBase
 {
@@ -100,7 +100,6 @@ void TestWei::initPhysics()
 			}
 		}
 
-        m_dynamicsWorld->setGravity(btVector3(0, -0.1f, 0));
 	}
 
 	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
@@ -130,7 +129,6 @@ void TestWei::createEmptyDynamicsWorld()
 
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
 
-	m_dynamicsWorld->setGravity(btVector3(0, -10, 0));
 }
 
 CommonExampleInterface* TestWeiCreateFunc(CommonExampleOptions& options)
