@@ -42,7 +42,7 @@ void btCustomSISolver::solve(btSIConstraintInfo& c)
 	btVelocityAccumulator& accum1 = m_accumulatorPool[c.m_accumId1];
 	btVelocityAccumulator& accum2 = m_accumulatorPool[c.m_accumId2];
 
-	btScalar jV = accum1.m_linearVelocity.dot(c.m_Jl1) + accum1.m_linearVelocity.dot(c.m_Ja1);
+	btScalar jV = accum1.m_linearVelocity.dot(c.m_Jl1) + accum1.m_angularVelocity.dot(c.m_Ja1);
 	jV += accum2.m_linearVelocity.dot(c.m_Jl2) + accum2.m_angularVelocity.dot(c.m_Ja2);
 	btScalar lambda = (-jV + c.m_rhs) / c.m_effM;
 
@@ -166,9 +166,9 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		btScalar penetration = pt.getDistance() + info.m_linearSlop;;
 		if (penetration < 0)
 		{
-			const float beta = 0.2f;
+			const float beta = 0.5f;
 			c.m_pentrationRhs = -beta* penetration / info.m_timeStep;
-			// c.m_rhs = -beta* pt.getDistance() / info.m_timeStep;
+			 //c.m_rhs = -beta* pt.getDistance() / info.m_timeStep;
 		}
 		else
 		{
@@ -238,13 +238,13 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 
 void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 {
+	solveFriction(info);
+
 	for (int i = 0; i < m_tmpContactConstraintPool.size(); ++i)
 	{
 		btSIConstraintInfo& c = m_tmpContactConstraintPool[i];
 		solve(c);
 	}
-
-	solveFriction(info);
 }
 
 void btCustomSISolver::solveFriction(const btContactSolverInfo& info)
@@ -254,8 +254,8 @@ void btCustomSISolver::solveFriction(const btContactSolverInfo& info)
 		btSIConstraintInfo& c = m_tmpFrictionConstraintPool[i];
 		const int frictionIdx = c.m_frcitionIdx;
 		const btScalar impulse = m_tmpContactConstraintPool[i].m_appliedImpulse;
-		c.m_lowerLimit = -0.5f * impulse;
-		c.m_upperLimit = 0.5f * impulse;
+		c.m_lowerLimit = -0.1f * impulse;
+		c.m_upperLimit = 0.1f * impulse;
 
 		solve(c);
 	}
