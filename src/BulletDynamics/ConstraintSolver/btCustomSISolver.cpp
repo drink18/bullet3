@@ -1,7 +1,9 @@
 #include "btCustomSISolver.h"
 #include "BulletCollision/NarrowPhaseCollision/btPersistentManifold.h"
+#include "LinearMath/btIDebugDraw.h"
 
 btCustomSISolver::btCustomSISolver()
+    :m_debugDrawer(nullptr)
 {
 
 }
@@ -125,6 +127,9 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 	for (int i = 0; i < manifold.getNumContacts(); ++i)
 	{
 		btManifoldPoint& pt = manifold.getContactPoint(i);
+
+        btIDebugDraw::DefaultColors defaultColors = m_debugDrawer->getDefaultColors();
+        m_debugDrawer->drawContactPoint(pt.getPositionWorldOnB(), pt.m_normalWorldOnB, pt.getDistance(), pt.getLifeTime(), defaultColors.m_contactPoint);
 
 		btRigidBody* bodyA = (btRigidBody*)btRigidBody::upcast(manifold.getBody0());
 		btRigidBody* bodyB = (btRigidBody*)btRigidBody::upcast(manifold.getBody1());
@@ -309,6 +314,7 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 	, btDispatcher* dispatcher)
 {
 
+    m_debugDrawer = debugDrawer;
 	const btScalar dt = info.m_timeStep;
 	m_tmpContactConstraintPool.clear();
 	m_tmpFrictionConstraintPool.clear();

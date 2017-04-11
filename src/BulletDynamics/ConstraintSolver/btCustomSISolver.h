@@ -108,4 +108,5 @@ protected:
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpContactConstraintPool;
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpFrictionConstraintPool;
 	btAlignedObjectArray<btVelocityAccumulator> m_accumulatorPool;
+    btIDebugDraw* m_debugDrawer;
 };
