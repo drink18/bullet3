@@ -12,9 +12,9 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 5
-#define ARRAY_SIZE_X 5 
-#define ARRAY_SIZE_Z 5 
+#define ARRAY_SIZE_Y 5 
+#define ARRAY_SIZE_X 1 
+#define ARRAY_SIZE_Z 1  
 
 class TestWei : public CommonRigidBodyBase
 {
