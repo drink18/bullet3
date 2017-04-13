@@ -226,56 +226,66 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 	btScalar relVel = nA.dot(vel);
     //printf("nA = %.3f, %.3f, %.3f, revVel = %.3f\n", nA.getX(), nA.getY(), nA.getZ(), relVel);
 
-	pt.m_lateralFrictionDir1 = vel - relVel * nA;
-	if (pt.m_lateralFrictionDir1.length2() > SIMD_EPSILON)
+	btVector3 t = vel - relVel * nA;
+	if (t.length2() > SIMD_EPSILON)
 	{
-        pt.m_lateralFrictionDir1.normalize();
-		btSIConstraintInfo& c = m_tmpFrictionConstraintPool.expand();
-		c.m_frcitionIdx = m_tmpContactConstraintPool.size() - 1;
-		c.m_accumId1 = getOrAllocateAccumulator(bodyA, info);
-		c.m_accumId2 = getOrAllocateAccumulator(bodyB, info);
-
-		pt.m_lateralFrictionDir2 = pt.m_lateralFrictionDir1.cross(nA);
-
-		btScalar effM1 = _computeBodyEffMass(invIA, bodyA->getInvMass(), rXnA);
-		btScalar effM2 = _computeBodyEffMass(invIB, bodyB->getInvMass(), rXnB);
-		c.m_effM = effM1 + effM2;
-
-		c.m_Jl1 = pt.m_lateralFrictionDir1;
-		c.m_Ja1 = rA.cross(c.m_Jl1);
-		c.m_Jl2 = -pt.m_lateralFrictionDir1;
-		c.m_Ja2 = rB.cross(c.m_Jl2);
-		c.m_invM1 = bodyA->getInvMass();
-		c.m_invM2 = bodyB->getInvMass();
-		c.m_invI1 = invIA;
-		c.m_invI2 = invIB;
-		c.m_origManifoldPoint = &pt;
+		t.normalize();
+		pt.m_lateralFrictionDir1 = t;
 	}
+	else
+	{
+		t = pt.m_lateralFrictionDir1;
+	}
+
+	btSIConstraintInfo& c = m_tmpFrictionConstraintPool.expand();
+	c.m_frcitionIdx = m_tmpContactConstraintPool.size() - 1;
+	c.m_accumId1 = getOrAllocateAccumulator(bodyA, info);
+	c.m_accumId2 = getOrAllocateAccumulator(bodyB, info);
+
+	btVector3 rXtA = rA.cross(t);
+	btVector3 rXtB = rB.cross(-t);
+	c.m_effM = _computeBodyEffMass(invIA, bodyA->getInvMass(), rXtA) + _computeBodyEffMass(invIB, bodyB->getInvMass(), rXtB);
+
+	c.m_Jl1 = t;
+	c.m_Ja1 = rXtA;
+	c.m_Jl2 = -t;
+	c.m_Ja2 = rXtB;
+	c.m_invM1 = bodyA->getInvMass();
+	c.m_invM2 = bodyB->getInvMass();
+	c.m_invI1 = invIA;
+	c.m_invI2 = invIB;
+	c.m_origManifoldPoint = &pt;
 }
 
 void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 {
-	solveFriction(info);
-
-	for (int i = 0; i < m_tmpContactConstraintPool.size(); ++i)
+	for (int i = 0; i < info.m_numIterations; ++i)
 	{
-		btSIConstraintInfo& c = m_tmpContactConstraintPool[i];
-		solve(c);
+		for (int ic = 0; ic < m_tmpContactConstraintPool.size(); ++ic)
+		{
+			btSIConstraintInfo& c = m_tmpContactConstraintPool[ic];
+			solve(c);
+		}
 	}
-}
 
-void btCustomSISolver::solveFriction(const btContactSolverInfo& info)
-{
-	for (int i = 0; i < m_tmpFrictionConstraintPool.size(); ++i)
+	for (int i = 0; i < info.m_numIterations; ++i)
 	{
-		const btScalar u = 0.3f;
-		btSIConstraintInfo& c = m_tmpFrictionConstraintPool[i];
-		const int frictionIdx = c.m_frcitionIdx;
-		const btScalar impulse = m_tmpContactConstraintPool[i].m_appliedImpulse;
-		c.m_lowerLimit = -u * impulse;
-		c.m_upperLimit = u * impulse;
+		for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
+		{
+			const btScalar u = 0.1f;
+			btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
+			const int frictionIdx = c.m_frcitionIdx;
+			const btScalar impulse = m_tmpContactConstraintPool[ic].m_appliedImpulse;
+			c.m_lowerLimit = -u * impulse;
+			c.m_upperLimit = u * impulse;
+		}
 
-		solve(c);
+		for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
+		{
+			btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
+			solve(c);
+		}
+
 	}
 }
 
@@ -340,7 +350,7 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 	// position error correction
 	solveAllPenetrations(info, numIter);
 
-	for(int i = 0; i < numIter; ++i)
+	//for(int i = 0; i < numIter; ++i)
 	{
 		// solver contact constraint
 		solveAllContacts(info);

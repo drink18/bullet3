@@ -101,7 +101,6 @@ protected:
 	void solveAllPenetrations(const btContactSolverInfo& info, int numIter);
 	void solve(btSIConstraintInfo& c);
 	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
-	void solveFriction(const btContactSolverInfo& c);
 	void finishSolving(const btContactSolverInfo& info);
 
 protected:
