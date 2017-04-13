@@ -155,7 +155,6 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		btMatrix3x3 invIMB = bodyB->getInvInertiaTensorWorld();
 		btVector3 invIB(invIMB[0][0], invIMB[1][1], invIMB[2][2]);
 
-
 		btScalar effM1 = _computeBodyEffMass(invIA, bodyA->getInvMass(), rXnA);
 		btScalar effM2 = _computeBodyEffMass(invIB, bodyB->getInvMass(), rXnB);
 		c.m_effM = effM1 + effM2;
@@ -172,6 +171,17 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		c.m_upperLimit = 1e10f;
 		c.m_lowerLimit = 0;
 
+		//apply warm starting impulse
+		if (info.m_solverMode & SOLVER_USE_WARMSTARTING)
+		{
+			btScalar warmStartingImp = pt.m_appliedImpulse * info.m_warmstartingFactor;
+			m_accumulatorPool[c.m_accumId1].m_linearVelocity += c.m_Jl1 * warmStartingImp * c.m_invM1;
+			m_accumulatorPool[c.m_accumId1].m_angularVelocity += c.m_Ja1 * warmStartingImp * c.m_invI1;
+			m_accumulatorPool[c.m_accumId2].m_linearVelocity += c.m_Jl2 * warmStartingImp * c.m_invM2;
+			m_accumulatorPool[c.m_accumId2].m_angularVelocity += c.m_Ja2 * warmStartingImp * c.m_invI2;
+			c.m_appliedImpulse = warmStartingImp;
+		}
+
 		btScalar penetration = pt.getDistance() + info.m_linearSlop;;
 		const float beta = 0.2f;
 		const float peneVelocity = -beta * penetration / info.m_timeStep;
@@ -185,9 +195,6 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 			c.m_pentrationRhs = 0.0f;
 			c.m_rhs = -peneVelocity;
 		}
-
-		// warm starting
-		c.m_appliedImpulse = pt.m_appliedImpulse;// *info.m_warmstartingFactor;
 
 		setupFrictionConstraint(bodyA, bodyB, pt, info);
 	}
