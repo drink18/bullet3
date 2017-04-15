@@ -13,8 +13,8 @@
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
 #define ARRAY_SIZE_Y 5 
-#define ARRAY_SIZE_X 1 
-#define ARRAY_SIZE_Z 1  
+#define ARRAY_SIZE_X 5 
+#define ARRAY_SIZE_Z 5
 
 class TestWei : public CommonRigidBodyBase
 {
@@ -38,6 +38,10 @@ public:
 		float targetPos[3] = { 0, 0, 0 };
 		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
 	}
+
+    btRigidBody* m_body = nullptr;
+
+    virtual void stepSimulation(float deltaTime) override; 
 };
 
 
@@ -64,9 +68,11 @@ void TestWei::initPhysics()
 		//create a few dynamic rigidbodies
 		// Re-using the same collision is better for memory usage and performance
 		btBoxShape* colShape = createBoxShape(btVector3(.1, .1, .1));
+		btBoxShape* colBig = createBoxShape(btVector3(1, .1, .5));
 
 		//btCollisionShape* colShape = new btSphereShape(btScalar(0.1));
 		m_collisionShapes.push_back(colShape);
+		m_collisionShapes.push_back(colBig);
 
 		/// Create Dynamic Objects
 		btTransform startTransform;
@@ -79,9 +85,13 @@ void TestWei::initPhysics()
 
 		btVector3 localInertia(0, 0, 0);
 		if (isDynamic)
+        {
 			colShape->calculateLocalInertia(mass, localInertia);
+            colBig->calculateLocalInertia(mass, localInertia);
+        }
 
 
+#if 1 
 		for (int k = 0; k < ARRAY_SIZE_Y; k++)
 		{
 			for (int i = 0; i < ARRAY_SIZE_X; i++)
@@ -90,18 +100,27 @@ void TestWei::initPhysics()
 				{
 					startTransform.setOrigin(btVector3(
 						btScalar(0.2*i),
-						btScalar(0.7f + .2*k),
+						btScalar(0.3f + .2*k),
 						btScalar(0.2*j)));				 
 					//startTransform.setRotation(btQuaternion(btVector3(0, 0, 1), 0.2f));
 
 
-					createRigidBody(mass , startTransform, colShape);
+					m_body = createRigidBody(mass , startTransform, colShape);
 				}
 			}
 		}
+#else
+        btTransform trans1; trans1.setIdentity();
+        trans1.setOrigin(btVector3(0.7f, 0.7f, 0));
+        btTransform trans2; trans2.setIdentity();
+        trans2.setOrigin(btVector3(0, 0.25f, 0));
+        m_body = createRigidBody(mass, trans1, colShape); 
+        createRigidBody(mass, trans2, colBig); 
+#endif 
 
 	}
 
+    //m_body->setLinearVelocity(btVector3(-3.5f, 0, 0));
 	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
@@ -122,13 +141,29 @@ void TestWei::createEmptyDynamicsWorld()
 	m_broadphase = new btDbvtBroadphase();
 
 	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
-	//m_solver = new btSequentialImpulseConstraintSolver;
-	m_solver = new btCustomSISolver();
+    //m_solver = new btSequentialImpulseConstraintSolver;
+    m_solver = new btCustomSISolver();
 	//btDantzigSolver* mlcp = new btDantzigSolver();
 	//m_solver = new btMLCPSolver(mlcp);
 
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
 
+}
+
+void TestWei::stepSimulation(float deltaTime)
+{
+    {
+        //float dist = 2;
+        //float pitch = 0;
+        //float yaw = 35;
+        //btVector3 targetPos = m_body->getCenterOfMassPosition();
+        //m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+    }
+    //m_body->applyCentralImpulse(btVector3(-0.05f, 0, 0));
+    CommonRigidBodyBase::stepSimulation(deltaTime);
+
+    btVector3 angVel= m_body->getAngularVelocity();
+    printf("(%.3f, %.3f, %.3f)", angVel.getX(), angVel.getY(), angVel.getZ());
 }
 
 CommonExampleInterface* TestWeiCreateFunc(CommonExampleOptions& options)

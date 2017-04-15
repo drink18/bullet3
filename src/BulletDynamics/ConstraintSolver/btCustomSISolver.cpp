@@ -187,13 +187,13 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		const float peneVelocity = -beta * penetration / info.m_timeStep;
 		if (penetration < 0)
 		{
-			c.m_pentrationRhs = peneVelocity;
-			//c.m_rhs = peneVelocity; //WWU : ?????
+            c.m_pentrationRhs = peneVelocity;
+            //c.m_rhs = peneVelocity; //WWU : ?????
 		}
 		else
 		{
 			c.m_pentrationRhs = 0.0f;
-			c.m_rhs = -peneVelocity;
+            c.m_rhs = peneVelocity;
 		}
 
 		setupFrictionConstraint(bodyA, bodyB, pt, info);
@@ -272,7 +272,7 @@ void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 	{
 		for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
 		{
-			const btScalar u = 0.1f;
+			const btScalar u = 0.13f;
 			btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
 			const int frictionIdx = c.m_frcitionIdx;
 			const btScalar impulse = m_tmpContactConstraintPool[ic].m_appliedImpulse;
@@ -350,6 +350,7 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 	// position error correction
 	solveAllPenetrations(info, numIter);
 
+
 	//for(int i = 0; i < numIter; ++i)
 	{
 		// solver contact constraint
@@ -358,6 +359,19 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 
 	finishSolving(info);
 
+    //for(int i = 0; i < m_tmpFrictionConstraintPool.size(); ++i)
+    //{
+        //btSIConstraintInfo& c = m_tmpFrictionConstraintPool[i];
+        //btVelocityAccumulator& accum1 = m_accumulatorPool[c.m_accumId1];
+        //btVelocityAccumulator& accum2 = m_accumulatorPool[c.m_accumId2];
+        //btRigidBody* body = accum1.m_originalBody->getInvMass() == 0 ? accum1.m_originalBody : accum2.m_originalBody;
+        //btVector3 angVel = body->getAngularVelocity();
+
+        //btScalar v= accum1.m_linearVelocity.dot(c.m_Jl1) + accum1.m_angularVelocity.dot(c.m_Ja1) 
+            //+ accum2.m_linearVelocity.dot(c.m_Jl2) + accum2.m_angularVelocity.dot(c.m_Ja2);
+       
+        //printf("tangent relV = %.3f, angVel = %.3f, %.3f, %.3f\n", v, angVel.getX(), angVel.getY(), angVel.getZ()); 
+    //}
 	return 0.0f;
 }
 
