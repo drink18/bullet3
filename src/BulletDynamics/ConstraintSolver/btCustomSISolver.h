@@ -68,6 +68,8 @@ public:
 		btScalar m_invM2;  //inversed mass 2
 		btVector3 m_invI1;  //inverse of inertial diag
 		btVector3 m_invI2;  //inverse of inertial diag
+        btVector3 m_angularFactor1;
+        btVector3 m_angularFactor2;
 		btScalar m_rhs;
 		btScalar m_pentrationRhs;
 		btScalar m_upperLimit;

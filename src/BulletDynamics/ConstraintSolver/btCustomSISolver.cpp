@@ -37,9 +37,9 @@ void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 		c.m_appliedPeneImpulse = accuLambda;
 
 		accu1.m_pushLinVelocity += c.m_Jl1 * impulse * c.m_invM1;
-		accu1.m_pushAngVelcity += c.m_Ja1 * impulse * c.m_invI1;
+		accu1.m_pushAngVelcity += c.m_Ja1 * impulse * c.m_invI1 * c.m_angularFactor1;
 		accu2.m_pushLinVelocity += c.m_Jl2 * impulse * c.m_invM2;
-		accu2.m_pushAngVelcity += c.m_Ja2 * impulse * c.m_invI2;
+		accu2.m_pushAngVelcity += c.m_Ja2 * impulse * c.m_invI2 * c.m_angularFactor2;
 	}
 }
 
@@ -170,15 +170,17 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		c.m_origManifoldPoint = &pt;
 		c.m_upperLimit = 1e10f;
 		c.m_lowerLimit = 0;
+        c.m_angularFactor1 = bodyA->getAngularFactor();
+        c.m_angularFactor2 = bodyB->getAngularFactor();
 
 		//apply warm starting impulse
 		if (info.m_solverMode & SOLVER_USE_WARMSTARTING)
 		{
 			btScalar warmStartingImp = pt.m_appliedImpulse * info.m_warmstartingFactor;
 			m_accumulatorPool[c.m_accumId1].m_linearVelocity += c.m_Jl1 * warmStartingImp * c.m_invM1;
-			m_accumulatorPool[c.m_accumId1].m_angularVelocity += c.m_Ja1 * warmStartingImp * c.m_invI1;
-			m_accumulatorPool[c.m_accumId2].m_linearVelocity += c.m_Jl2 * warmStartingImp * c.m_invM2;
-			m_accumulatorPool[c.m_accumId2].m_angularVelocity += c.m_Ja2 * warmStartingImp * c.m_invI2;
+			m_accumulatorPool[c.m_accumId1].m_angularVelocity += c.m_Ja1 * warmStartingImp * c.m_invI1 * c.m_angularFactor1;
+			m_accumulatorPool[c.m_accumId2].m_linearVelocity += c.m_Jl2 * warmStartingImp * c.m_invM2 ;
+			m_accumulatorPool[c.m_accumId2].m_angularVelocity += c.m_Ja2 * warmStartingImp * c.m_invI2 * c.m_angularFactor2;
 			c.m_appliedImpulse = warmStartingImp;
 		}
 
@@ -222,7 +224,7 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 	vel1 = bodyA->getAngularVelocity().cross(rA) + bodyA->getLinearVelocity();
 	vel2 = bodyB->getAngularVelocity().cross(rB) + bodyB->getLinearVelocity();
 
-	btVector3 vel = vel1 - vel2;
+	btVector3 vel = vel2 - vel1;
 	btScalar relVel = nA.dot(vel);
     //printf("nA = %.3f, %.3f, %.3f, revVel = %.3f\n", nA.getX(), nA.getY(), nA.getZ(), relVel);
 
@@ -237,24 +239,40 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 		t = pt.m_lateralFrictionDir1;
 	}
 
-	btSIConstraintInfo& c = m_tmpFrictionConstraintPool.expand();
-	c.m_frcitionIdx = m_tmpContactConstraintPool.size() - 1;
-	c.m_accumId1 = getOrAllocateAccumulator(bodyA, info);
-	c.m_accumId2 = getOrAllocateAccumulator(bodyB, info);
 
-	btVector3 rXtA = rA.cross(t);
-	btVector3 rXtB = rB.cross(-t);
-	c.m_effM = _computeBodyEffMass(invIA, bodyA->getInvMass(), rXtA) + _computeBodyEffMass(invIB, bodyB->getInvMass(), rXtB);
+    if(t.length2() > SIMD_EPSILON)
+    {
+        btSIConstraintInfo& c = m_tmpFrictionConstraintPool.expand();
+        c.m_frcitionIdx = m_tmpContactConstraintPool.size() - 1;
+        c.m_accumId1 = getOrAllocateAccumulator(bodyA, info);
+        c.m_accumId2 = getOrAllocateAccumulator(bodyB, info);
 
-	c.m_Jl1 = t;
-	c.m_Ja1 = rXtA;
-	c.m_Jl2 = -t;
-	c.m_Ja2 = rXtB;
-	c.m_invM1 = bodyA->getInvMass();
-	c.m_invM2 = bodyB->getInvMass();
-	c.m_invI1 = invIA;
-	c.m_invI2 = invIB;
-	c.m_origManifoldPoint = &pt;
+        //if (info.m_solverMode & SOLVER_USE_WARMSTARTING)
+        //{
+        //btScalar warmStartingImp = pt.m_appliedImpulseLateral1 * info.m_warmstartingFactor;
+        //m_accumulatorPool[c.m_accumId1].m_linearVelocity += c.m_Jl1 * warmStartingImp * c.m_invM1;
+        //m_accumulatorPool[c.m_accumId1].m_angularVelocity += c.m_Ja1 * warmStartingImp * c.m_invI1;
+        //m_accumulatorPool[c.m_accumId2].m_linearVelocity += c.m_Jl2 * warmStartingImp * c.m_invM2;
+        //m_accumulatorPool[c.m_accumId2].m_angularVelocity += c.m_Ja2 * warmStartingImp * c.m_invI2;
+        //c.m_appliedImpulse = warmStartingImp;
+        //}
+
+        btVector3 rXtA = rA.cross(t);
+        btVector3 rXtB = rB.cross(-t);
+        c.m_effM = _computeBodyEffMass(invIA, bodyA->getInvMass(), rXtA) + _computeBodyEffMass(invIB, bodyB->getInvMass(), rXtB);
+
+        c.m_Jl1 = t;
+        c.m_Ja1 = rXtA;
+        c.m_Jl2 = -t;
+        c.m_Ja2 = rXtB;
+        c.m_invM1 = bodyA->getInvMass();
+        c.m_invM2 = bodyB->getInvMass();
+        c.m_invI1 = invIA;
+        c.m_invI2 = invIB;
+        c.m_origManifoldPoint = &pt;
+        c.m_angularFactor1 = bodyA->getAngularFactor();
+        c.m_angularFactor2 = bodyB->getAngularFactor();
+    }
 }
 
 void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
@@ -266,18 +284,18 @@ void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 			btSIConstraintInfo& c = m_tmpContactConstraintPool[ic];
 			solve(c);
 		}
-	}
 
-	for (int i = 0; i < info.m_numIterations; ++i)
-	{
 		for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
 		{
-			const btScalar u = 0.13f;
+			const btScalar u = 0.3f;
 			btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
 			const int frictionIdx = c.m_frcitionIdx;
-			const btScalar impulse = m_tmpContactConstraintPool[ic].m_appliedImpulse;
-			c.m_lowerLimit = -u * impulse;
-			c.m_upperLimit = u * impulse;
+			const btScalar impulse = m_tmpContactConstraintPool[frictionIdx].m_appliedImpulse;
+            if(impulse > 0)
+            {
+                c.m_lowerLimit = -u * impulse;
+                c.m_upperLimit = u * impulse;
+            }
 		}
 
 		for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
@@ -285,7 +303,6 @@ void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 			btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
 			solve(c);
 		}
-
 	}
 }
 
@@ -324,6 +341,12 @@ void btCustomSISolver::finishSolving(const btContactSolverInfo& info)
 		btSIConstraintInfo& c = m_tmpContactConstraintPool[i];
 		c.m_origManifoldPoint->m_appliedImpulse = c.m_appliedImpulse;
 	}
+
+    for(int i = 0; i < m_tmpFrictionConstraintPool.size(); ++i)
+    {
+		btSIConstraintInfo& c = m_tmpContactConstraintPool[i];
+		c.m_origManifoldPoint->m_appliedImpulseLateral1 = c.m_appliedImpulse;
+    }
 }
 
 btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
@@ -359,19 +382,22 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 
 	finishSolving(info);
 
-    //for(int i = 0; i < m_tmpFrictionConstraintPool.size(); ++i)
-    //{
-        //btSIConstraintInfo& c = m_tmpFrictionConstraintPool[i];
-        //btVelocityAccumulator& accum1 = m_accumulatorPool[c.m_accumId1];
-        //btVelocityAccumulator& accum2 = m_accumulatorPool[c.m_accumId2];
-        //btRigidBody* body = accum1.m_originalBody->getInvMass() == 0 ? accum1.m_originalBody : accum2.m_originalBody;
-        //btVector3 angVel = body->getAngularVelocity();
-
-        //btScalar v= accum1.m_linearVelocity.dot(c.m_Jl1) + accum1.m_angularVelocity.dot(c.m_Ja1) 
-            //+ accum2.m_linearVelocity.dot(c.m_Jl2) + accum2.m_angularVelocity.dot(c.m_Ja2);
-       
-        //printf("tangent relV = %.3f, angVel = %.3f, %.3f, %.3f\n", v, angVel.getX(), angVel.getY(), angVel.getZ()); 
-    //}
+    for(int i = 0; i < m_tmpFrictionConstraintPool.size(); ++i)
+    {
+        btSIConstraintInfo& c = m_tmpFrictionConstraintPool[i];
+        if(c.m_appliedImpulse > SIMD_EPSILON)
+        {
+            btVelocityAccumulator& acc1 = m_accumulatorPool[c.m_accumId1];
+            btVelocityAccumulator& acc2 = m_accumulatorPool[c.m_accumId2];
+            btVector3 t = c.m_Jl1;
+            btVector3 v1 = acc1.m_originalBody->getLinearVelocity();
+            btVector3 v2 = acc2.m_originalBody->getLinearVelocity();
+            printf("impulse= %.3f, t=%f, %f, %f, v1=%f, %f. %f, v2=%f, %f, %f\n", c.m_appliedImpulse,
+                    t.getX(), t.getY(), t.getZ(), v1.getX(), v1.getY(), v1.getZ(),
+                     v2.getX(), v2.getY(), v2.getZ());
+        }
+    }
+    printf("*******************************************\n");
 	return 0.0f;
 }
 

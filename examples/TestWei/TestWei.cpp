@@ -14,7 +14,7 @@
 
 #define ARRAY_SIZE_Y 5 
 #define ARRAY_SIZE_X 5 
-#define ARRAY_SIZE_Z 5
+#define ARRAY_SIZE_Z 5 
 
 class TestWei : public CommonRigidBodyBase
 {
@@ -100,7 +100,7 @@ void TestWei::initPhysics()
 				{
 					startTransform.setOrigin(btVector3(
 						btScalar(0.2*i),
-						btScalar(0.3f + .2*k),
+						btScalar(0.5f + .2*k),
 						btScalar(0.2*j)));				 
 					//startTransform.setRotation(btQuaternion(btVector3(0, 0, 1), 0.2f));
 
@@ -163,7 +163,6 @@ void TestWei::stepSimulation(float deltaTime)
     CommonRigidBodyBase::stepSimulation(deltaTime);
 
     btVector3 angVel= m_body->getAngularVelocity();
-    printf("(%.3f, %.3f, %.3f)", angVel.getX(), angVel.getY(), angVel.getZ());
 }
 
 CommonExampleInterface* TestWeiCreateFunc(CommonExampleOptions& options)
