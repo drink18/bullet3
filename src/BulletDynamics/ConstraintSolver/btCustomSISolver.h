@@ -87,6 +87,8 @@ public:
 			, m_pentrationRhs(0)
 			, m_origManifoldPoint(nullptr)
 			, m_frcitionIdx(-1)
+			, m_lowerLimit(0)
+			, m_upperLimit(0)
 		{
 		}
 	};
