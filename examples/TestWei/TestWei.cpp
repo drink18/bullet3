@@ -12,9 +12,9 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 5 
-#define ARRAY_SIZE_X 5 
-#define ARRAY_SIZE_Z 5 
+#define ARRAY_SIZE_Y 4
+#define ARRAY_SIZE_X 1 
+#define ARRAY_SIZE_Z 1 
 
 class TestWei : public CommonRigidBodyBase
 {
@@ -100,7 +100,7 @@ void TestWei::initPhysics()
 				{
 					startTransform.setOrigin(btVector3(
 						btScalar(0.2*i),
-						btScalar(0.5f + .2*k),
+						btScalar(0.2f + .2*k),
 						btScalar(0.2*j)));				 
 					//startTransform.setRotation(btQuaternion(btVector3(0, 0, 1), 0.2f));
 
