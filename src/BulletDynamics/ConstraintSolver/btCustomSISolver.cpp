@@ -144,6 +144,8 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		
 		c.m_accumId1 = getOrAllocateAccumulator(bodyA, info);
 		c.m_accumId2 = getOrAllocateAccumulator(bodyB, info);
+		btVelocityAccumulator& accum1 = m_accumulatorPool[c.m_accumId1];
+		btVelocityAccumulator& accum2 = m_accumulatorPool[c.m_accumId2];
 
 		btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
 		btVector3 nA = pt.m_normalWorldOnB;
@@ -174,9 +176,7 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
         c.m_angularFactor1 = bodyA->getAngularFactor();
         c.m_angularFactor2 = bodyB->getAngularFactor();
 
-		btScalar relVel = nA.dot(bodyA->getLinearVelocity()) + rXnA.dot(bodyA->getAngularVelocity())
-			- nB.dot(bodyB->getLinearVelocity()) - rXnB.dot(bodyB->getAngularVelocity());
-
+		btScalar relVel = accum1.getVelocityAtContact(nA, rXnA) + accum2.getVelocityAtContact(nB, rXnB);
 
 		//apply warm starting impulse
 		if (info.m_solverMode & SOLVER_USE_WARMSTARTING)
@@ -195,16 +195,16 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		if (penetration < 0)
 		{
 			c.m_pentrationRhs = peneVelocity;
-			c.m_rhs = relVel;
-			//c.m_rhs = peneVelocity; //WWU : ?????
+			//negative because we put initial vel error to RHS, 
+			c.m_rhs = -relVel; 
 		}
 		else
 		{
 			c.m_pentrationRhs = 0.0f;
-			c.m_rhs = relVel + penetration;
+			c.m_rhs = peneVelocity;
 		}
 
-		//setupFrictionConstraint(bodyA, bodyB, pt, info);
+		setupFrictionConstraint(bodyA, bodyB, pt, info);
 	}
 }
 

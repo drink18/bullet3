@@ -12,23 +12,19 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 4
+#define ARRAY_SIZE_Y 4 
 #define ARRAY_SIZE_X 1 
 #define ARRAY_SIZE_Z 1 
 
 class TestWei : public CommonRigidBodyBase
 {
 public:
-	TestWei(struct GUIHelperInterface* helper)
-		: CommonRigidBodyBase(helper)
-	{
-	}
+	TestWei(struct GUIHelperInterface* helper);
 
 	virtual ~TestWei() {}
 	virtual void initPhysics() override ;
 	virtual void createEmptyDynamicsWorld() override;
 	virtual void renderScene() override;
-
 
 	void resetCamera()
 	{
@@ -38,11 +34,22 @@ public:
 		float targetPos[3] = { 0, 0, 0 };
 		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
 	}
-
-    btRigidBody* m_body = nullptr;
-
     virtual void stepSimulation(float deltaTime) override; 
+
+	virtual bool keyboardCallback(int key, int state) override;
+private:
+	void step(float deltaTime);
+private:
+    btRigidBody* m_body = nullptr;
+	bool m_paused = false;
 };
+
+
+TestWei::TestWei(struct GUIHelperInterface* helper)
+	: CommonRigidBodyBase(helper)
+{
+
+}
 
 
 void TestWei::initPhysics()
@@ -152,6 +159,8 @@ void TestWei::createEmptyDynamicsWorld()
 
 void TestWei::stepSimulation(float deltaTime)
 {
+	if (m_paused)
+		return;
     {
         //float dist = 2;
         //float pitch = 0;
@@ -160,14 +169,40 @@ void TestWei::stepSimulation(float deltaTime)
         //m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
     }
     //m_body->applyCentralImpulse(btVector3(-0.05f, 0, 0));
-    CommonRigidBodyBase::stepSimulation(deltaTime);
+	step(deltaTime);
+}
 
+void TestWei::step(float deltaTime)
+{
+    CommonRigidBodyBase::stepSimulation(deltaTime);
     btVector3 angVel= m_body->getAngularVelocity();
+}
+
+
+
+bool TestWei::keyboardCallback(int key, int state)
+{
+
+	if (key == B3G_F5)
+	{
+		m_paused = !m_paused;
+		return false;
+	}
+
+	if (key == B3G_F6)
+	{
+		m_paused = true;
+		step(1.0f / 60);
+		return false;
+	}
+
+	return CommonRigidBodyBase::keyboardCallback(key, state);
 }
 
 CommonExampleInterface* TestWeiCreateFunc(CommonExampleOptions& options)
 {
 	return new TestWei(options.m_guiHelper);
 }
+
 
 B3_STANDALONE_EXAMPLE(TestWeiCreateFunc)

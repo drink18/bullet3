@@ -53,6 +53,11 @@ public:
 			, m_originalBody(nullptr)
 		{
 		}
+
+		btScalar getVelocityAtContact(const btVector3& n, const btVector3& rXn) const
+		{
+			return n.dot(m_originalBody->getLinearVelocity()) + rXn.dot(m_originalBody->getAngularVelocity());
+		}
 	};
 
 	struct btSIConstraintInfo
