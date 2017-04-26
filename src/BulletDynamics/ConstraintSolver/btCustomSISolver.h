@@ -80,10 +80,13 @@ public:
 		btScalar m_upperLimit;
 		btScalar m_lowerLimit;
 
+
 		int m_accumId1;
 		int m_accumId2;
 		btManifoldPoint* m_origManifoldPoint;
 		int m_frcitionIdx;
+
+		btScalar m_debugProjVel;
 
 		btSIConstraintInfo()
 			: m_appliedImpulse(0)
@@ -94,6 +97,7 @@ public:
 			, m_frcitionIdx(-1)
 			, m_lowerLimit(0)
 			, m_upperLimit(0)
+			, m_debugProjVel(0)
 		{
 		}
 	};
