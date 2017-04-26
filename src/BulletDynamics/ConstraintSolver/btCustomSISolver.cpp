@@ -304,21 +304,23 @@ void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 			btSIConstraintInfo& c = m_tmpContactConstraintPool[ic];
 			solve(c);
 		}
+	}
 
-		for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
+	for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
+	{
+		const btScalar u = 0.1f;
+		btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
+		const int frictionIdx = c.m_frcitionIdx;
+		const btScalar impulse = m_tmpContactConstraintPool[frictionIdx].m_appliedImpulse;
+		if (impulse > 0)
 		{
-			const btScalar u = 0.1f;
-			btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
-			const int frictionIdx = c.m_frcitionIdx;
-			const btScalar impulse = m_tmpContactConstraintPool[frictionIdx].m_appliedImpulse;
-			if (impulse > 0)
-			{
-				c.m_lowerLimit = -u * impulse;
-				c.m_upperLimit = u * impulse;
-			}
+			c.m_lowerLimit = -u * impulse;
+			c.m_upperLimit = u * impulse;
 		}
+	}
 
-
+	for (int i = 0; i < info.m_numIterations; ++i)
+	{
 		for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
 		{
 			btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
