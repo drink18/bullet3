@@ -12,7 +12,7 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 5 
+#define ARRAY_SIZE_Y 15 
 #define ARRAY_SIZE_X 5 
 #define ARRAY_SIZE_Z 5 
 
@@ -28,7 +28,7 @@ public:
 
 	void resetCamera()
 	{
-		float dist = 2;
+		float dist = 4;
 		float pitch = 0;
 		float yaw = 35;
 		float targetPos[3] = { 0, 0, 0 };
@@ -98,7 +98,6 @@ void TestWei::initPhysics()
         }
 
 
-#if 1 
 		for (int k = 0; k < ARRAY_SIZE_Y; k++)
 		{
 			for (int i = 0; i < ARRAY_SIZE_X; i++)
@@ -107,23 +106,23 @@ void TestWei::initPhysics()
 				{
 					startTransform.setOrigin(btVector3(
 						btScalar(0.2*i),
-						btScalar(0.2f + .2*k),
+						btScalar(0.25f + .2*k),
 						btScalar(0.2*j)));				 
 					//startTransform.setRotation(btQuaternion(btVector3(0, 0, 1), 0.2f));
 
 
 					m_body = createRigidBody(mass , startTransform, colShape);
+					//m_body->setActivationState(DISABLE_DEACTIVATION);
 				}
 			}
 		}
-#else
-        btTransform trans1; trans1.setIdentity();
-        trans1.setOrigin(btVector3(0.7f, 0.7f, 0));
-        btTransform trans2; trans2.setIdentity();
-        trans2.setOrigin(btVector3(0, 0.25f, 0));
-        m_body = createRigidBody(mass, trans1, colShape); 
-        createRigidBody(mass, trans2, colBig); 
-#endif 
+
+        ////btTransform trans1; trans1.setIdentity();
+        ////trans1.setOrigin(btVector3(0.7f, 0.7f, 0));
+        ////m_body = createRigidBody(mass, trans1, colShape); 
+        //btTransform trans2; trans2.setIdentity();
+        //trans2.setOrigin(btVector3(0, 0.15f, 0));
+        //createRigidBody(mass, trans2, colBig); 
 
 	}
 

@@ -39,9 +39,10 @@ public:
 		btVector3 m_externalForce;
 		btVector3 m_linearVelocity;
 		btVector3 m_angularVelocity;
-		btVector3 m_invM;
 		btVector3 m_pushLinVelocity;
 		btVector3 m_pushAngVelcity;
+		btVector3 m_deltaLinearVelocity;
+		btVector3 m_deltaAngularVelocity;
 
 		btRigidBody* m_originalBody;
 
@@ -50,13 +51,27 @@ public:
 			, m_linearVelocity(0, 0, 0)
 			, m_pushLinVelocity(0, 0, 0)
 			, m_pushAngVelcity(0, 0, 0)
+			, m_deltaLinearVelocity(0, 0, 0)
+			, m_deltaAngularVelocity(0, 0, 0)
 			, m_originalBody(nullptr)
 		{
 		}
 
 		btScalar getVelocityAtContact(const btVector3& n, const btVector3& rXn) const
 		{
-			return n.dot(m_originalBody->getLinearVelocity()) + rXn.dot(m_originalBody->getAngularVelocity());
+			return n.dot(m_linearVelocity ) + rXn.dot(m_angularVelocity);
+		}
+
+		void applyDeltaVelocities()
+		{
+			m_linearVelocity += m_deltaLinearVelocity;
+			m_angularVelocity += m_deltaAngularVelocity;
+		}
+
+		void applyWarmStartImpulse(btScalar impulse,  const btVector3& linearComponent, btVector3& angularComponent)
+		{
+			m_deltaLinearVelocity += linearComponent * impulse;
+			m_deltaAngularVelocity += angularComponent * impulse;
 		}
 	};
 
