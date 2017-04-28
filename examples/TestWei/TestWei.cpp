@@ -120,9 +120,9 @@ void TestWei::initPhysics()
         ////btTransform trans1; trans1.setIdentity();
         ////trans1.setOrigin(btVector3(0.7f, 0.7f, 0));
         ////m_body = createRigidBody(mass, trans1, colShape); 
-        //btTransform trans2; trans2.setIdentity();
-        //trans2.setOrigin(btVector3(0, 0.15f, 0));
-        //createRigidBody(mass, trans2, colBig); 
+        btTransform trans2; trans2.setIdentity();
+        trans2.setOrigin(btVector3(0, 0.15f, 0));
+        createRigidBody(mass, trans2, colBig); 
 
 	}
 
@@ -147,8 +147,8 @@ void TestWei::createEmptyDynamicsWorld()
 	m_broadphase = new btDbvtBroadphase();
 
 	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
-    //m_solver = new btSequentialImpulseConstraintSolver;
-    m_solver = new btCustomSISolver();
+	//m_solver = new btSequentialImpulseConstraintSolver;
+	m_solver = new btCustomSISolver();
 	//btDantzigSolver* mlcp = new btDantzigSolver();
 	//m_solver = new btMLCPSolver(mlcp);
 

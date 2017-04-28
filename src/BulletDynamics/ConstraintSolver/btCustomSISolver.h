@@ -37,6 +37,7 @@ public:
 	{
 		BT_DECLARE_ALIGNED_ALLOCATOR(); 
 		btVector3 m_externalForce;
+		btVector3 m_externalTorque;
 		btVector3 m_linearVelocity;
 		btVector3 m_angularVelocity;
 		btVector3 m_pushLinVelocity;
@@ -47,7 +48,9 @@ public:
 		btRigidBody* m_originalBody;
 
 		btVelocityAccumulator()
-			: m_angularVelocity(0, 0, 0)
+			: m_externalForce(0, 0, 0)
+			, m_externalTorque(0, 0, 0)
+			, m_angularVelocity(0, 0, 0)
 			, m_linearVelocity(0, 0, 0)
 			, m_pushLinVelocity(0, 0, 0)
 			, m_pushAngVelcity(0, 0, 0)
@@ -83,15 +86,18 @@ public:
 		btVector3 m_Ja1; // angular part of J
 		btVector3 m_Jl2; //linear part of J
 		btVector3 m_Ja2; // angular part of J
-		btScalar m_effM; // effective mass
+		btScalar m_invEffM; // effective mass
 		btScalar m_invM1;  //inver mass 1
 		btScalar m_invM2;  //inversed mass 2
 		btVector3 m_invI1;  //inverse of inertial diag
 		btVector3 m_invI2;  //inverse of inertial diag
-        btVector3 m_angularFactor1;
-        btVector3 m_angularFactor2;
+		btVector3 m_linearFactor1;
+		btVector3 m_linearFactor2;
+		btVector3 m_angularFactor1;
+		btVector3 m_angularFactor2;
 		btScalar m_rhs;
 		btScalar m_pentrationRhs;
+		btScalar m_friction;
 		btScalar m_upperLimit;
 		btScalar m_lowerLimit;
 
@@ -101,8 +107,6 @@ public:
 		btManifoldPoint* m_origManifoldPoint;
 		int m_frcitionIdx;
 
-		btScalar m_debugProjVel;
-
 		btSIConstraintInfo()
 			: m_appliedImpulse(0)
 			, m_appliedPeneImpulse(0)
@@ -110,9 +114,9 @@ public:
 			, m_pentrationRhs(0)
 			, m_origManifoldPoint(nullptr)
 			, m_frcitionIdx(-1)
+			, m_friction(0)
 			, m_lowerLimit(0)
 			, m_upperLimit(0)
-			, m_debugProjVel(0)
 		{
 		}
 	};
@@ -126,7 +130,7 @@ protected:
 	int getOrAllocateAccumulator(btCollisionObject* btBody, const btContactSolverInfo& info);
 
 	void solveAllContacts(const btContactSolverInfo& info);
-	void solveAllPenetrations(const btContactSolverInfo& info, int numIter);
+	void solveAllPenetrations(const btContactSolverInfo& info);
 	void solve(btSIConstraintInfo& c);
 	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
 	void finishSolving(const btContactSolverInfo& info);
