@@ -100,6 +100,7 @@ public:
 		btScalar m_friction;
 		btScalar m_upperLimit;
 		btScalar m_lowerLimit;
+		btScalar m_cfm;
 
 
 		int m_accumId1;
@@ -117,6 +118,7 @@ public:
 			, m_friction(0)
 			, m_lowerLimit(0)
 			, m_upperLimit(0)
+			, m_cfm(0)
 		{
 		}
 	};

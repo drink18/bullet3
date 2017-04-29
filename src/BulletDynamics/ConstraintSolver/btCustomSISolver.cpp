@@ -24,14 +24,15 @@ void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 
 		jV += accu1.m_pushLinVelocity.dot(c.m_Jl1) + accu1.m_pushAngVelcity.dot(c.m_Ja1);
 		jV += accu2.m_pushLinVelocity.dot(c.m_Jl2) + accu2.m_pushAngVelcity.dot(c.m_Ja2);
-		btScalar lambda =  (-jV + c.m_pentrationRhs) * c.m_invEffM;
+		//btScalar lambda =  (-jV + c.m_pentrationRhs) * c.m_invEffM;
+		btScalar lambda = c.m_rhs * c.m_invEffM - c.m_appliedImpulse * c.m_cfm;
+		lambda -= jV * c.m_invEffM;
 
 		btScalar  accuLambda = c.m_appliedPeneImpulse + lambda;
 		if (accuLambda < 0)
 		{
 			accuLambda = 0;
 		}
-		accuLambda = accuLambda < 0 ? 0 : accuLambda;
 
 		btScalar impulse = accuLambda - c.m_appliedPeneImpulse;
 		c.m_appliedPeneImpulse = accuLambda;
@@ -51,7 +52,9 @@ void btCustomSISolver::solve(btSIConstraintInfo& c)
 	btScalar jV = 0;
 	jV = accum1.m_deltaLinearVelocity.dot(c.m_Jl1) + accum1.m_deltaAngularVelocity.dot(c.m_Ja1);
 	jV += accum2.m_deltaLinearVelocity.dot(c.m_Jl2) + accum2.m_deltaAngularVelocity.dot(c.m_Ja2);
-	btScalar lambda = (-jV + c.m_rhs) * c.m_invEffM;
+	btScalar lambda = c.m_rhs * c.m_invEffM -c.m_appliedImpulse * c.m_cfm;
+	lambda -= jV * c.m_invEffM;
+	//btScalar lambda = (-jV + c.m_rhs - c.m_appliedImpulse * c.m_cfm) * c.m_invEffM;
 
 	btScalar  accuLambda = c.m_appliedImpulse + lambda;
 	if (accuLambda > c.m_upperLimit)
@@ -65,10 +68,8 @@ void btCustomSISolver::solve(btSIConstraintInfo& c)
 	btScalar impulse = accuLambda - c.m_appliedImpulse;
 	c.m_appliedImpulse = accuLambda;
 
-	accum1.m_deltaLinearVelocity += c.m_Jl1 * impulse * c.m_invM1;
-	accum2.m_deltaLinearVelocity += c.m_Jl2 * impulse * c.m_invM2;
-	accum1.m_deltaAngularVelocity += c.m_Ja1 * impulse * c.m_invI1;
-	accum2.m_deltaAngularVelocity += c.m_Ja2 * impulse * c.m_invI2;
+	accum1.applyWarmStartImpulse(impulse, c.m_Jl1 * c.m_invM1, c.m_Ja1 * c.m_invI1);
+	accum2.applyWarmStartImpulse(impulse, c.m_Jl2 * c.m_invM2, c.m_Ja2 * c.m_invI2);
 }
 
 namespace {
@@ -180,6 +181,7 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		c.m_linearFactor2 = bodyB->getLinearFactor();
 		c.m_angularFactor1 = bodyA->getAngularFactor();
 		c.m_angularFactor2 = bodyB->getAngularFactor();
+		c.m_cfm = cfm;
 
 		btScalar relVel = accum1.getVelocityAtContact(nA, rXnA) + accum2.getVelocityAtContact(nB, rXnB);
 
@@ -190,11 +192,11 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		if (penetration > 0)
 		{
 			positionError = 0.0f;
-			velocityError -= penetration * invDt;
+			velocityError -= penetration * invDt;  // remove gap by adding velocity
 		}
 		else
 		{
-			positionError = -penetration * info.m_erp * invDt;
+			positionError = -penetration * info.m_erp2 * invDt;
 		}
 
 
@@ -283,6 +285,7 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 	c.m_angularFactor1 = bodyA->getAngularFactor();
 	c.m_angularFactor2 = bodyB->getAngularFactor();
 	c.m_friction = pt.m_combinedFriction;
+	c.m_cfm = 0;
 
 	if (info.m_solverMode & SOLVER_USE_WARMSTARTING)
 	{
