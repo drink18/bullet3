@@ -184,17 +184,15 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 			btScalar invEffM = _computeBodyEffMass(invIA, invMA, c.m_Ja1) + _computeBodyEffMass(invIB, invMB, c.m_Ja2);
 
 			c.m_invEffM = 1.0f / invEffM;
-			{
 
-				btScalar rel_vel = c.m_Jl1.dot(rbA.getLinearVelocity()) + c.m_Ja1.dot(rbA.getAngularVelocity());
-				rel_vel += c.m_Jl2.dot(rbB.getLinearVelocity()) + c.m_Ja2.dot(rbB.getAngularVelocity());
+			btScalar rel_vel = c.m_Jl1.dot(rbA.getLinearVelocity()) + c.m_Ja1.dot(rbA.getAngularVelocity());
+			rel_vel += c.m_Jl2.dot(rbB.getLinearVelocity()) + c.m_Ja2.dot(rbB.getAngularVelocity());
 
-				btScalar positionError = c.m_rhs;
-				btScalar velocityError = -rel_vel;
+			btScalar positionError = c.m_rhs;
+			btScalar velocityError = -rel_vel * info2.m_damping;
 
-				c.m_rhs = velocityError + positionError;
-				c.m_appliedImpulse = 0.0f;
-			}
+			c.m_rhs = velocityError + positionError;
+			c.m_appliedImpulse = 0.0f;
 		}
 	}
 }
