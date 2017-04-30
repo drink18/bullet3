@@ -106,13 +106,14 @@ void TestWei::initPhysics()
 				{
 					startTransform.setOrigin(btVector3(
 						btScalar(0.2*i),
-						btScalar(0.25f + .2*k),
+						btScalar(0.55f + .2*k),
 						btScalar(0.2*j)));				 
 					//startTransform.setRotation(btQuaternion(btVector3(0, 0, 1), 0.2f));
 
 
 					m_body = createRigidBody(mass , startTransform, colShape);
 					//m_body->setActivationState(DISABLE_DEACTIVATION);
+					m_body->setRestitution(0.2f);
 				}
 			}
 		}
@@ -153,7 +154,7 @@ void TestWei::createEmptyDynamicsWorld()
 	//m_solver = new btMLCPSolver(mlcp);
 
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
-	m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.f;
+	m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.005f;
 
 }
 

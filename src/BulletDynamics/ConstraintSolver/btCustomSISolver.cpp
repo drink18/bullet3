@@ -24,9 +24,7 @@ void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 
 		jV += accu1.m_pushLinVelocity.dot(c.m_Jl1) + accu1.m_pushAngVelcity.dot(c.m_Ja1);
 		jV += accu2.m_pushLinVelocity.dot(c.m_Jl2) + accu2.m_pushAngVelcity.dot(c.m_Ja2);
-		//btScalar lambda =  (-jV + c.m_pentrationRhs) * c.m_invEffM;
-		btScalar lambda = c.m_pentrationRhs * c.m_invEffM;// -c.m_appliedImpulse * c.m_cfm;
-		lambda -= jV * c.m_invEffM;
+		btScalar lambda =  (-jV + c.m_pentrationRhs - c.m_appliedPeneImpulse * c.m_cfm) * c.m_invEffM;
 
 		btScalar  accuLambda = c.m_appliedPeneImpulse + lambda;
 		if (accuLambda < 0)
@@ -52,8 +50,7 @@ void btCustomSISolver::solve(btSIConstraintInfo& c)
 	btScalar jV = 0;
 	jV = accum1.m_deltaLinearVelocity.dot(c.m_Jl1) + accum1.m_deltaAngularVelocity.dot(c.m_Ja1);
 	jV += accum2.m_deltaLinearVelocity.dot(c.m_Jl2) + accum2.m_deltaAngularVelocity.dot(c.m_Ja2);
-	btScalar lambda = c.m_rhs * c.m_invEffM;
-	lambda -= jV * c.m_invEffM;
+	btScalar lambda = (-jV + c.m_rhs - c.m_appliedImpulse * c.m_cfm) * c.m_invEffM;
 
 	btScalar  accuLambda = c.m_appliedImpulse + lambda;
 	if (accuLambda > c.m_upperLimit)
@@ -67,8 +64,8 @@ void btCustomSISolver::solve(btSIConstraintInfo& c)
 	btScalar impulse = accuLambda - c.m_appliedImpulse;
 	c.m_appliedImpulse = accuLambda;
 
-	accum1.applyWarmStartImpulse(impulse, c.m_Jl1 * c.m_invM1, c.m_Ja1 * c.m_invI1);
-	accum2.applyWarmStartImpulse(impulse, c.m_Jl2 * c.m_invM2, c.m_Ja2 * c.m_invI2);
+	accum1.applyDeltaImpulse(impulse, c.m_Jl1 * c.m_invM1, c.m_Ja1 * c.m_invI1);
+	accum2.applyDeltaImpulse(impulse, c.m_Jl2 * c.m_invM2, c.m_Ja2 * c.m_invI2);
 }
 
 namespace {
@@ -206,8 +203,8 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		if (info.m_solverMode & SOLVER_USE_WARMSTARTING)
 		{
 			btScalar warmStartingImp = pt.m_appliedImpulse * info.m_warmstartingFactor;
-			accum1.applyWarmStartImpulse(warmStartingImp, c.m_Jl1 * c.m_invM1 * c.m_linearFactor1, c.m_Ja1 * c.m_invI1 * c.m_angularFactor1);
-			accum2.applyWarmStartImpulse(warmStartingImp, c.m_Jl2 * c.m_invM2 * c.m_linearFactor2, c.m_Ja2 * c.m_invI2 * c.m_angularFactor2);
+			accum1.applyDeltaImpulse(warmStartingImp, c.m_Jl1 * c.m_invM1 * c.m_linearFactor1, c.m_Ja1 * c.m_invI1 * c.m_angularFactor1);
+			accum2.applyDeltaImpulse(warmStartingImp, c.m_Jl2 * c.m_invM2 * c.m_linearFactor2, c.m_Ja2 * c.m_invI2 * c.m_angularFactor2);
 			c.m_appliedImpulse = warmStartingImp;
 		}
 
@@ -289,8 +286,8 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 	if (info.m_solverMode & SOLVER_USE_WARMSTARTING)
 	{
 		btScalar warmStartingImp = pt.m_appliedImpulseLateral1 * info.m_warmstartingFactor;
-		accum1.applyWarmStartImpulse(warmStartingImp, c.m_Jl1 * c.m_invM1 * c.m_linearFactor1, c.m_Ja1 * c.m_invI1 * c.m_angularFactor1);
-		accum2.applyWarmStartImpulse(warmStartingImp, c.m_Jl2 * c.m_invM2 * c.m_linearFactor2, c.m_Ja2 * c.m_invI2 * c.m_angularFactor2);
+		accum1.applyDeltaImpulse(warmStartingImp, c.m_Jl1 * c.m_invM1 * c.m_linearFactor1, c.m_Ja1 * c.m_invI1 * c.m_angularFactor1);
+		accum2.applyDeltaImpulse(warmStartingImp, c.m_Jl2 * c.m_invM2 * c.m_linearFactor2, c.m_Ja2 * c.m_invI2 * c.m_angularFactor2);
 		c.m_appliedImpulse = warmStartingImp;
 	}
 }

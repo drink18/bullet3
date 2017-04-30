@@ -71,7 +71,7 @@ public:
 			m_angularVelocity += m_deltaAngularVelocity;
 		}
 
-		void applyWarmStartImpulse(btScalar impulse,  const btVector3& linearComponent, btVector3& angularComponent)
+		void applyDeltaImpulse(btScalar impulse,  const btVector3& linearComponent, btVector3& angularComponent)
 		{
 			m_deltaLinearVelocity += linearComponent * impulse;
 			m_deltaAngularVelocity += angularComponent * impulse;
