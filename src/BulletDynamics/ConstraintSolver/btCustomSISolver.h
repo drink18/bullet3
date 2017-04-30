@@ -76,6 +76,12 @@ public:
 			m_deltaLinearVelocity += linearComponent * impulse;
 			m_deltaAngularVelocity += angularComponent * impulse;
 		}
+
+		void applyPushImpulse(btScalar impulse,  const btVector3& linearComponent, btVector3& angularComponent)
+		{
+			m_pushLinVelocity += linearComponent * impulse;
+			m_pushAngVelcity += angularComponent * impulse;
+		}
 	};
 
 	struct btSIConstraintInfo

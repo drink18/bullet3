@@ -35,10 +35,8 @@ void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 		btScalar impulse = accuLambda - c.m_appliedPeneImpulse;
 		c.m_appliedPeneImpulse = accuLambda;
 
-		accu1.m_pushLinVelocity += c.m_Jl1 * impulse * c.m_invM1;
-		accu1.m_pushAngVelcity += c.m_Ja1 * impulse * c.m_invI1;
-		accu2.m_pushLinVelocity += c.m_Jl2 * impulse * c.m_invM2;
-		accu2.m_pushAngVelcity += c.m_Ja2 * impulse * c.m_invI2;
+		accu1.applyPushImpulse(impulse, c.m_Jl1 * c.m_invM1, c.m_Ja1 * c.m_invI1);
+		accu2.applyPushImpulse(impulse, c.m_Jl2 * c.m_invM2, c.m_Ja2 * c.m_invI2);
 	}
 }
 
