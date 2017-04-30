@@ -117,6 +117,14 @@ public:
 		btSIConstraintInfo()
 			: m_appliedImpulse(0)
 			, m_appliedPeneImpulse(0)
+			, m_Jl1(0, 0, 0)
+			, m_Jl2(0, 0, 0)
+			, m_Ja1(0, 0, 0)
+			, m_Ja2(0, 0, 0)
+			, m_linearFactor1(1.0f, 1.0f, 1.0f)
+			, m_linearFactor2(1.0f, 1.0f, 1.0f)
+			, m_angularFactor1(1.0f, 1.0f, 1.0f)
+			, m_angularFactor2(1.0f, 1.0f, 1.0f)
 			, m_rhs(0)
 			, m_pentrationRhs(0)
 			, m_origManifoldPoint(nullptr)
@@ -130,6 +138,7 @@ public:
 	};
 
 protected:
+	void setupAllTypedContraint(btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& info);
 	void setupAllContactConstraints(btPersistentManifold& manifold, const btContactSolverInfo& info);
 	void setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* bodyB, btManifoldPoint& pt, 
 		const btContactSolverInfo& info);
@@ -146,6 +155,7 @@ protected:
 protected:
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpContactConstraintPool;
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpFrictionConstraintPool;
+	btAlignedObjectArray<btSIConstraintInfo> m_tmpTypedConstraintPool;
 	btAlignedObjectArray<btVelocityAccumulator> m_accumulatorPool;
     btIDebugDraw* m_debugDrawer;
 };

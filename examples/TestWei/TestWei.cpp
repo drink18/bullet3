@@ -335,6 +335,9 @@ void TestWei::setupCase1()
 		btBoxShape* colShape = createBoxShape(btVector3(.5f, .5f, .5f));
 		startTransform.setOrigin(btVector3(0, 8.0f, 0));
 		createRigidBody(1.0f, startTransform, colShape);
+
+		startTransform.setOrigin(btVector3(0, 8.0f, 1));
+		createRigidBody(1.0f, startTransform, colShape);
 	}
 }
 

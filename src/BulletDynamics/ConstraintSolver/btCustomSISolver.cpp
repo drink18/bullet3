@@ -115,6 +115,88 @@ void btCustomSISolver::initAllAccumulators(btCollisionObject** bodies, int numBo
 	{
 		int id = getOrAllocateAccumulator(bodies[i], info);
 	}
+
+}
+
+void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& info)
+{
+	int totalNumRows = 0;
+	for (int i = 0; i < numConstraints; ++i)
+	{
+
+		btTypedConstraint* constraint = constraints[i];
+		constraint->buildJacobian();
+		constraint->internalSetAppliedImpulse(0.0f);
+	}
+
+	for (int i = 0; i < numConstraints; ++i)
+	{
+		btTypedConstraint& typedC = *constraints[i];
+
+		btRigidBody& rbA = typedC.getRigidBodyA();
+		btRigidBody& rbB = typedC.getRigidBodyB();
+		btVector3 invIA = rbA.getInvInertiaTensorWorld() * btVector3(1.0f, 1.0f, 1.0f);
+		btVector3 invIB = rbB.getInvInertiaTensorWorld() * btVector3(1.0f, 1.0f, 1.0f);
+		btScalar invMA = rbA.getInvMass();
+		btScalar invMB = rbB.getInvMass();
+
+		int accuId1 = getOrAllocateAccumulator(&rbA, info);
+		int accuId2 = getOrAllocateAccumulator(&rbB, info);
+
+		btTypedConstraint::btConstraintInfo1 info1;
+		typedC.getInfo1(&info1);
+		int curConstraintStartIdx = m_tmpTypedConstraintPool.size();
+		for (int j = 0; j < info1.m_numConstraintRows; ++j)
+		{
+			btSIConstraintInfo& c = m_tmpTypedConstraintPool.expand();
+			c.m_lowerLimit = -SIMD_INFINITY;
+			c.m_upperLimit = SIMD_INFINITY;
+			c.m_appliedImpulse = 0.0f;
+			c.m_appliedPeneImpulse = 0.0f;
+			c.m_accumId1 = accuId1;
+			c.m_accumId2 = accuId2;
+			c.m_invM1 = invMA;
+			c.m_invI1 = invIA;
+			c.m_invM2 = invMB;
+			c.m_invI2 = invIB;
+		}
+
+		btSIConstraintInfo& curTypeConstraint = m_tmpTypedConstraintPool[curConstraintStartIdx];
+		btTypedConstraint::btConstraintInfo2 info2;
+		info2.fps = 1.f / info.m_timeStep;
+		info2.erp = info.m_erp;
+		info2.m_J1linearAxis = curTypeConstraint.m_Jl1;
+		info2.m_J1angularAxis = curTypeConstraint.m_Ja1;
+		info2.m_J2linearAxis = curTypeConstraint.m_Jl2;
+		info2.m_J2angularAxis = curTypeConstraint.m_Ja2;
+		info2.rowskip = sizeof(btSIConstraintInfo) / sizeof(btScalar);//check this
+		info2.m_constraintError = &curTypeConstraint.m_rhs;
+		curTypeConstraint.m_cfm = info.m_globalCfm;
+		info2.m_damping = info.m_damping;
+		info2.m_lowerLimit = &curTypeConstraint.m_lowerLimit;
+		info2.m_upperLimit = &curTypeConstraint.m_upperLimit;
+		info2.m_numIterations = info.m_numIterations;
+		typedC.getInfo2(&info2);
+
+		for (int j = curConstraintStartIdx; j < info1.m_numConstraintRows; ++j)
+		{
+			btSIConstraintInfo& c = m_tmpTypedConstraintPool[j];
+			btScalar invEffM = _computeBodyEffMass(invIA, invMA, c.m_Ja1) + _computeBodyEffMass(invIB, invMB, c.m_Ja2);
+
+			c.m_invEffM = 1.0f / invEffM;
+			{
+
+				btScalar rel_vel = c.m_Jl1.dot(rbA.getLinearVelocity()) + c.m_Ja1.dot(rbA.getAngularVelocity());
+				rel_vel += c.m_Jl2.dot(rbB.getLinearVelocity()) + c.m_Ja2.dot(rbB.getAngularVelocity());
+
+				btScalar positionError = c.m_rhs;
+				btScalar velocityError = -rel_vel;
+
+				c.m_rhs = velocityError + positionError;
+				c.m_appliedImpulse = 0.0f;
+			}
+		}
+	}
 }
 
 void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifold, const btContactSolverInfo& info)
@@ -294,7 +376,11 @@ void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 {
 	for (int i = 0; i < info.m_numIterations; ++i)
 	{
-		const int contactCount = m_tmpContactConstraintPool.size();
+		for (int ic = 0; ic <  m_tmpTypedConstraintPool.size(); ++ic)
+		{
+			solve(m_tmpTypedConstraintPool[ic]);
+		}
+
 		for (int ic = 0; ic < m_tmpContactConstraintPool.size(); ++ic)
 		{
 			solve(m_tmpContactConstraintPool[ic]);
@@ -314,6 +400,7 @@ void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 			}
 			solve(m_tmpFrictionConstraintPool[ic]);
 		}
+
 	}
 }
 
@@ -376,10 +463,12 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 	const btScalar dt = info.m_timeStep;
 	m_tmpContactConstraintPool.clear();
 	m_tmpFrictionConstraintPool.clear();
+	m_tmpTypedConstraintPool.clear();
 	m_accumulatorPool.clear();
 
 	initAllAccumulators(bodies, numBodies, info);
 
+	setupAllTypedContraint(constraints, numConstraints, info);
 	for (int i = 0; i < numManifolds; ++i)
 	{
 		setupAllContactConstraints(*manifold[i], info);
