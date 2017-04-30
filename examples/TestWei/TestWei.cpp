@@ -6,6 +6,8 @@
 #include "LinearMath/btAlignedObjectArray.h"
 
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
+#include "../CommonInterfaces/CommonParameterInterface.h"
+
 #include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
 #include "BulletDynamics/MLCPSolvers/btDantzigSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
@@ -16,33 +18,35 @@
 #define ARRAY_SIZE_X 5 
 #define ARRAY_SIZE_Z 5 
 
-class TestWei : public CommonRigidBodyBase
+
+namespace
 {
-public:
-	TestWei(struct GUIHelperInterface* helper);
 
-	virtual ~TestWei() {}
-	virtual void initPhysics() override ;
-	virtual void createEmptyDynamicsWorld() override;
-	virtual void renderScene() override;
-
-	void resetCamera()
+	const char* getSolverTypeName(TestWei::DemoSolverType type)
 	{
-		float dist = 4;
-		float pitch = 0;
-		float yaw = 35;
-		float targetPos[3] = { 0, 0, 0 };
-		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
-	}
-    virtual void stepSimulation(float deltaTime) override; 
 
-	virtual bool keyboardCallback(int key, int state) override;
-private:
-	void step(float deltaTime);
-private:
-    btRigidBody* m_body = nullptr;
-	bool m_paused = false;
-};
+		const char* name = "";
+		switch (type)
+		{
+		case TestWei::BT_SequentialSolver:
+			name = "Sequential solver";
+			break;
+		case TestWei::WeiSolver:
+			name = "Wei solver";
+			break;
+		default:
+			break;
+		}
+
+		return name;
+	}
+
+	TestWei::DemoSolverType gDemoSolverType = TestWei::WeiSolver;
+	void setSolverTypeCallback(int buttonId, bool buttonState, void* userPointer)
+	{
+		gDemoSolverType = static_cast<TestWei::DemoSolverType>(buttonId);
+	}
+}
 
 
 TestWei::TestWei(struct GUIHelperInterface* helper)
@@ -113,7 +117,7 @@ void TestWei::initPhysics()
 
 					m_body = createRigidBody(mass , startTransform, colShape);
 					//m_body->setActivationState(DISABLE_DEACTIVATION);
-					m_body->setRestitution(0.2f);
+					//m_body->setRestitution(0.5f);
 				}
 			}
 		}
@@ -129,11 +133,46 @@ void TestWei::initPhysics()
 
     //m_body->setLinearVelocity(btVector3(-3.5f, 0, 0));
 	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
+
+	createUI();
+}
+
+void TestWei::createUI()
+{
+    // add buttons for switching to different solver types
+	for(int i  = 0 ; i < DemoSolverType::SovlerType_count; ++i)
+    {
+		//char* buttonName = "Sequential impulse solver";
+		char buttonName[256];
+		DemoSolverType solverType = static_cast<DemoSolverType>(i);
+		sprintf(buttonName, "Solver: %s", getSolverTypeName(solverType));
+        ButtonParams button( buttonName, 0, false );
+		button.m_buttonId = solverType;
+        button.m_callback = setSolverTypeCallback;
+        m_guiHelper->getParameterInterface()->registerButtonParameter( button );
+    }
 }
 
 void TestWei::renderScene()
 {
+	drawDebugText();
 	CommonRigidBodyBase::renderScene();
+}
+
+void TestWei::drawDebugText()
+{
+	{
+		const btScalar lineH = 30.0f;
+		btScalar y = 40;
+		btScalar x = 300;
+		m_guiHelper->getAppInterface()->drawText(getSolverTypeName(gDemoSolverType), x, y, 0.4f);
+		y += lineH;
+		if (m_solverType != gDemoSolverType)
+		{
+			m_guiHelper->getAppInterface()->drawText("Restart Demo to use new solver", x, y, 0.4f);
+			y += lineH;
+		}
+	}
 }
 
 void TestWei::createEmptyDynamicsWorld()
@@ -148,10 +187,18 @@ void TestWei::createEmptyDynamicsWorld()
 	m_broadphase = new btDbvtBroadphase();
 
 	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
-	//m_solver = new btSequentialImpulseConstraintSolver;
-	m_solver = new btCustomSISolver();
-	//btDantzigSolver* mlcp = new btDantzigSolver();
-	//m_solver = new btMLCPSolver(mlcp);
+	m_solverType = gDemoSolverType;
+	switch (m_solverType)
+	{
+	case BT_SequentialSolver:
+		m_solver = new btSequentialImpulseConstraintSolver;
+		break;
+	case WeiSolver:
+		m_solver = new btCustomSISolver();
+		break;
+	default:
+		break;
+	}
 
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
 	m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.005f;
