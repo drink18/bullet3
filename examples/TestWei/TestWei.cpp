@@ -14,9 +14,6 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 
-#define ARRAY_SIZE_Y 5 
-#define ARRAY_SIZE_X 5 
-#define ARRAY_SIZE_Z 5 
 
 
 namespace
@@ -49,8 +46,9 @@ namespace
 }
 
 
-TestWei::TestWei(struct GUIHelperInterface* helper)
-	: CommonRigidBodyBase(helper)
+TestWei::TestWei(struct GUIHelperInterface* helper, int testCase)
+	: CommonRigidBodyBase(helper),
+	m_testCase(testCase)
 {
 
 }
@@ -75,62 +73,18 @@ void TestWei::initPhysics()
 	createRigidBody(0, groundTransform, groundShape, btVector4(0, 0, 1, 1));
 	m_solver = new btCustomSISolver();
 
+
+	switch (m_testCase)
 	{
-		//create a few dynamic rigidbodies
-		// Re-using the same collision is better for memory usage and performance
-		btBoxShape* colShape = createBoxShape(btVector3(.1, .1, .1));
-		btBoxShape* colBig = createBoxShape(btVector3(1, .1, .5));
-
-		//btCollisionShape* colShape = new btSphereShape(btScalar(0.1));
-		m_collisionShapes.push_back(colShape);
-		m_collisionShapes.push_back(colBig);
-
-		/// Create Dynamic Objects
-		btTransform startTransform;
-		startTransform.setIdentity();
-
-		btScalar	mass(1.f);
-
-		//rigidbody is dynamic if and only if mass is non zero, otherwise static
-		bool isDynamic = (mass != 0.f);
-
-		btVector3 localInertia(0, 0, 0);
-		if (isDynamic)
-        {
-			colShape->calculateLocalInertia(mass, localInertia);
-            colBig->calculateLocalInertia(mass, localInertia);
-        }
-
-
-		for (int k = 0; k < ARRAY_SIZE_Y; k++)
-		{
-			for (int i = 0; i < ARRAY_SIZE_X; i++)
-			{
-				for (int j = 0; j < ARRAY_SIZE_Z; j++)
-				{
-					startTransform.setOrigin(btVector3(
-						btScalar(0.2*i),
-						btScalar(0.55f + .2*k),
-						btScalar(0.2*j)));				 
-					//startTransform.setRotation(btQuaternion(btVector3(0, 0, 1), 0.2f));
-
-
-					m_body = createRigidBody(mass , startTransform, colShape);
-					//m_body->setActivationState(DISABLE_DEACTIVATION);
-					//m_body->setRestitution(0.5f);
-				}
-			}
-		}
-
-        ////btTransform trans1; trans1.setIdentity();
-        ////trans1.setOrigin(btVector3(0.7f, 0.7f, 0));
-        ////m_body = createRigidBody(mass, trans1, colShape); 
-        //btTransform trans2; trans2.setIdentity();
-        //trans2.setOrigin(btVector3(0, 0.15f, 0));
-        //createRigidBody(mass, trans2, colBig); 
-
+	case 0:
+		setupCase0();
+		break;
+	case 1:
+		setupCase1();
+		break;
+	default:
+		break;
 	}
-
     //m_body->setLinearVelocity(btVector3(-3.5f, 0, 0));
 	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 
@@ -222,8 +176,7 @@ void TestWei::stepSimulation(float deltaTime)
 
 void TestWei::step(float deltaTime)
 {
-    CommonRigidBodyBase::stepSimulation(deltaTime);
-    btVector3 angVel= m_body->getAngularVelocity();
+	CommonRigidBodyBase::stepSimulation(deltaTime);
 }
 
 
@@ -247,9 +200,147 @@ bool TestWei::keyboardCallback(int key, int state)
 	return CommonRigidBodyBase::keyboardCallback(key, state);
 }
 
+void TestWei::setupCase0()
+{
+	const int ARRAY_SIZE_Y = 5;
+	const int ARRAY_SIZE_X = 5;
+	const int ARRAY_SIZE_Z = 5;
+
+	//create a few dynamic rigidbodies
+	// Re-using the same collision is better for memory usage and performance
+	btBoxShape* colShape = createBoxShape(btVector3(.1, .1, .1));
+	btBoxShape* colBig = createBoxShape(btVector3(1, .1, .5));
+
+	//btCollisionShape* colShape = new btSphereShape(btScalar(0.1));
+	m_collisionShapes.push_back(colShape);
+	m_collisionShapes.push_back(colBig);
+
+	/// Create Dynamic Objects
+	btTransform startTransform;
+	startTransform.setIdentity();
+
+	btScalar	mass(1.f);
+
+	//rigidbody is dynamic if and only if mass is non zero, otherwise static
+	bool isDynamic = (mass != 0.f);
+
+	btVector3 localInertia(0, 0, 0);
+	if (isDynamic)
+	{
+		colShape->calculateLocalInertia(mass, localInertia);
+		colBig->calculateLocalInertia(mass, localInertia);
+	}
+
+
+	for (int k = 0; k < ARRAY_SIZE_Y; k++)
+	{
+		for (int i = 0; i < ARRAY_SIZE_X; i++)
+		{
+			for (int j = 0; j < ARRAY_SIZE_Z; j++)
+			{
+				startTransform.setOrigin(btVector3(
+					btScalar(0.2*i),
+					btScalar(0.55f + .2*k),
+					btScalar(0.2*j)));
+				//startTransform.setRotation(btQuaternion(btVector3(0, 0, 1), 0.2f));
+
+
+				m_body = createRigidBody(mass, startTransform, colShape);
+				//m_body->setActivationState(DISABLE_DEACTIVATION);
+				//m_body->setRestitution(0.5f);
+			}
+		}
+	}
+
+	////btTransform trans1; trans1.setIdentity();
+	////trans1.setOrigin(btVector3(0.7f, 0.7f, 0));
+	////m_body = createRigidBody(mass, trans1, colShape); 
+	//btTransform trans2; trans2.setIdentity();
+	//trans2.setOrigin(btVector3(0, 0.15f, 0));
+	//createRigidBody(mass, trans2, colBig); 
+
+}
+
+void TestWei::setupCase1()
+{		  
+	// camera setup
+	{
+		float dist = 10.6f;
+		float pitch = 87.79f;
+		float yaw = 31;
+		float targetPos[3] = {0, 0, 0 };
+		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
+	{
+		///create a few basic rigid bodies
+		btCollisionShape* groundShape = new btBoxShape(btVector3(btScalar(1.), btScalar(1.), btScalar(25.)));
+
+
+		m_collisionShapes.push_back(groundShape);
+
+		btTransform groundTransform;
+		groundTransform.setIdentity();
+		groundTransform.setOrigin(btVector3(0, 3, 0));
+		groundTransform.setRotation(btQuaternion(btVector3(1, 0, 0), SIMD_PI*0.03));
+		//We can also use DemoApplication::localCreateRigidBody, but for clarity it is provided here:
+		btScalar mass(0.);
+
+		//rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool isDynamic = (mass != 0.f);
+
+		btVector3 localInertia(0, 0, 0);
+		if (isDynamic)
+			groundShape->calculateLocalInertia(mass, localInertia);
+
+		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, groundShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		body->setFriction(.5);
+
+		//add the body to the dynamics world
+		m_dynamicsWorld->addRigidBody(body);
+	}
+
+	if(false)
+	{
+		btCollisionShape* groundShape = new btBoxShape(btVector3(btScalar(100.),btScalar(100.),btScalar(50.)));
+	
+		m_collisionShapes.push_back(groundShape);
+
+		btTransform groundTransform;
+		groundTransform.setIdentity();
+		groundTransform.setOrigin(btVector3(0,0,-54));
+		//We can also use DemoApplication::localCreateRigidBody, but for clarity it is provided here:
+		btScalar mass(0.);
+
+		//rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool isDynamic = (mass != 0.f);
+
+		btVector3 localInertia(0,0,0);
+		if (isDynamic)
+			groundShape->calculateLocalInertia(mass,localInertia);
+
+		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,groundShape,localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		body->setFriction(.1);
+		//add the body to the dynamics world
+		m_dynamicsWorld->addRigidBody(body);
+	}
+	{
+
+		btTransform startTransform; startTransform.setIdentity();
+		btBoxShape* colShape = createBoxShape(btVector3(.5f, .5f, .5f));
+		startTransform.setOrigin(btVector3(0, 8.0f, 0));
+		createRigidBody(1.0f, startTransform, colShape);
+	}
+}
+
 CommonExampleInterface* TestWeiCreateFunc(CommonExampleOptions& options)
 {
-	return new TestWei(options.m_guiHelper);
+	return new TestWei(options.m_guiHelper, options.m_option);
 }
 
 

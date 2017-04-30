@@ -21,7 +21,7 @@ public:
 	};
 
 public:
-	TestWei(struct GUIHelperInterface* helper);
+	TestWei(struct GUIHelperInterface* helper, int testCase);
 
 	virtual ~TestWei() {}
 	virtual void initPhysics() override ;
@@ -30,23 +30,24 @@ public:
 
 	void resetCamera()
 	{
-		float dist = 4;
-		float pitch = 0;
-		float yaw = 35;
-		float targetPos[3] = { 0, 0, 0 };
-		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
 	}
     virtual void stepSimulation(float deltaTime) override; 
 
 	virtual bool keyboardCallback(int key, int state) override;
 	void createUI();
 	void drawDebugText();
+
+
+	// setup test cases
+	void setupCase0();
+	void setupCase1();
 private:
 	void step(float deltaTime);
 private:
-    btRigidBody* m_body = nullptr;
+	btRigidBody* m_body = nullptr;
 	bool m_paused = false;
 	DemoSolverType m_solverType;
+	int m_testCase = 0;
 };
 
 

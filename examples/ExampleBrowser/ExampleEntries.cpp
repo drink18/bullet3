@@ -99,13 +99,16 @@ struct ExampleEntry
 
 
 
-static ExampleEntry gDefaultExamples[]=
+static ExampleEntry gDefaultExamples[] =
 {
+
+	ExampleEntry(0, "TestWei"),
+	ExampleEntry(1, "Wei's example", "Baisc example", TestWeiCreateFunc, 0),
+	ExampleEntry(1, "Slope", "Slope example", TestWeiCreateFunc, 1),
 
 	ExampleEntry(0,"API"),
 
 	ExampleEntry(1,"Basic Example","Create some rigid bodies using box collision shapes. This is a good example to familiarize with the basic initialization of Bullet. The Basic Example can also be compiled without graphical user interface, as a console application. Press W for wireframe, A to show AABBs, I to suspend/restart physics simulation. Press D to toggle auto-deactivation of the simulation. ", BasicExampleCreateFunc),
-	ExampleEntry(1,"Wei's example","Wei's example", TestWeiCreateFunc),
 
 	ExampleEntry(1,"Rolling Friction", "Damping is often not good enough to keep rounded objects from rolling down a sloped surface. Instead, you can set the rolling friction of a rigid body. Generally it is best to leave the rolling friction to zero, to avoid artifacts.", RollingFrictionCreateFunc),
 
