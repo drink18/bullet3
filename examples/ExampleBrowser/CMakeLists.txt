@@ -193,6 +193,8 @@ SET(BulletExampleBrowser_SRCS
 	../SharedMemory/PhysicsServerCommandProcessor.h
 	../BasicDemo/BasicExample.cpp
 	../BasicDemo/BasicExample.h
+	../TestWei/TestWei.cpp
+	../TestWei/TestWei.h
 	../InverseDynamics/InverseDynamicsExample.cpp
 	../InverseDynamics/InverseDynamicsExample.h
 	../InverseKinematics/InverseKinematicsExample.cpp
