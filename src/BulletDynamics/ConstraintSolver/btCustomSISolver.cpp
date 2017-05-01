@@ -273,9 +273,16 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 			positionError = -penetration * info.m_erp2 * invDt;
 		}
 
-
-		c.m_rhs = velocityError;
-		c.m_pentrationRhs = positionError;
+		if (info.m_splitImpulse && penetration < info.m_splitImpulsePenetrationThreshold)
+		{
+			c.m_rhs = velocityError;
+			c.m_pentrationRhs = positionError;
+		}
+		else
+		{
+			c.m_rhs = velocityError + positionError;
+			c.m_pentrationRhs = 0.0f;
+		}
 
 		//apply warm starting impulse
 		if (info.m_solverMode & SOLVER_USE_WARMSTARTING)
