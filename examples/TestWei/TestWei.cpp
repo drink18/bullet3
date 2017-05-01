@@ -85,6 +85,9 @@ void TestWei::initPhysics()
 	case 2:
 		setupCase2();
 		break;
+	case 3:
+		setupCase3();
+		break;
 	default:
 		break;
 	}
@@ -166,14 +169,6 @@ void TestWei::stepSimulation(float deltaTime)
 {
 	if (m_paused)
 		return;
-    {
-        //float dist = 2;
-        //float pitch = 0;
-        //float yaw = 35;
-        //btVector3 targetPos = m_body->getCenterOfMassPosition();
-        //m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
-    }
-    //m_body->applyCentralImpulse(btVector3(-0.05f, 0, 0));
 	step(deltaTime);
 }
 
@@ -186,7 +181,6 @@ void TestWei::step(float deltaTime)
 
 bool TestWei::keyboardCallback(int key, int state)
 {
-
 	if (key == B3G_F5)
 	{
 		m_paused = !m_paused;
@@ -376,6 +370,48 @@ void TestWei::setupCase2()
 		body->setAngularVelocity(btVector3(0,3,0));
 
 		m_dynamicsWorld->addRigidBody(body);
+	}
+
+	{
+		const btScalar CUBE_HALF_EXTENTS = 1.0f;
+		btScalar mass = 5.0f;
+		btCollisionShape* shape = new btBoxShape(btVector3(CUBE_HALF_EXTENTS, CUBE_HALF_EXTENTS, CUBE_HALF_EXTENTS));
+		btTransform trans;
+		trans.setIdentity();
+		trans.setOrigin(btVector3(0,0,-5));
+
+		btRigidBody* body0 = createRigidBody( mass,trans,shape);
+		trans.setOrigin(btVector3(2*CUBE_HALF_EXTENTS,20,0));
+		mass = 1.f;
+		btVector3 pivotInA(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,0);
+		btTypedConstraint* p2p = new btPoint2PointConstraint(*body0,pivotInA);
+		m_dynamicsWorld->addConstraint(p2p);
+		p2p ->setBreakingImpulseThreshold(10.2);
+		p2p->setDbgDrawSize(btScalar(5.f));
+	}
+}
+
+void TestWei::setupCase3()
+{
+
+	// camera setup
+	{
+		float dist = 10.7f;
+		float pitch = -75.0f;
+		float yaw = 31;
+		float targetPos[3] = {0, 0, 0 };
+		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
+	{
+		btSphereShape* sphere = new btSphereShape(1.0f);
+		btTransform trans; trans.setIdentity();
+		trans.setOrigin(btVector3(0, 8.0f, 0));
+		btRigidBody* body = createRigidBody(1.0f, trans, sphere);
+		body->setAngularVelocity(btVector3(2.0f, 0, 0));
+		body->setRollingFriction(0.2f);
+		body->setActivationState(DISABLE_DEACTIVATION);
+		m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.05f;
+		m_dynamicsWorld->getSolverInfo().m_splitImpulse = false;
 	}
 }
 

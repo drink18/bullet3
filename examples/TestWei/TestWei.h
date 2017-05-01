@@ -42,6 +42,7 @@ public:
 	void setupCase0();
 	void setupCase1();
 	void setupCase2();
+	void setupCase3(); // rolling friction
 private:
 	void step(float deltaTime);
 private:
