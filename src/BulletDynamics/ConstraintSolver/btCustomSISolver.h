@@ -112,6 +112,7 @@ public:
 		int m_accumId1;
 		int m_accumId2;
 		btManifoldPoint* m_origManifoldPoint;
+		btTypedConstraint* m_originalContraint;
 		int m_frcitionIdx;
 
 		btSIConstraintInfo()
@@ -128,6 +129,7 @@ public:
 			, m_rhs(0)
 			, m_pentrationRhs(0)
 			, m_origManifoldPoint(nullptr)
+			, m_originalContraint(nullptr)
 			, m_frcitionIdx(-1)
 			, m_friction(0)
 			, m_lowerLimit(0)

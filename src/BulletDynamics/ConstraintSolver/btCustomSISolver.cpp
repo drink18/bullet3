@@ -133,6 +133,9 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 	{
 		btTypedConstraint& typedC = *constraints[i];
 
+		if(!typedC.isEnabled())
+			continue;
+
 		btRigidBody& rbA = typedC.getRigidBodyA();
 		btRigidBody& rbB = typedC.getRigidBodyB();
 		btVector3 invIA = rbA.getInvInertiaTensorWorld() * btVector3(1.0f, 1.0f, 1.0f);
@@ -149,6 +152,7 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 		for (int j = 0; j < info1.m_numConstraintRows; ++j)
 		{
 			btSIConstraintInfo& c = m_tmpTypedConstraintPool.expand();
+			c.m_originalContraint = &typedC;
 			c.m_lowerLimit = -SIMD_INFINITY;
 			c.m_upperLimit = SIMD_INFINITY;
 			c.m_appliedImpulse = 0.0f;
@@ -169,6 +173,7 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 		info2.m_J1angularAxis = curTypeConstraint.m_Ja1;
 		info2.m_J2linearAxis = curTypeConstraint.m_Jl2;
 		info2.m_J2angularAxis = curTypeConstraint.m_Ja2;
+		info2.cfm = &curTypeConstraint.m_cfm;
 		info2.rowskip = sizeof(btSIConstraintInfo) / sizeof(btScalar);//check this
 		info2.m_constraintError = &curTypeConstraint.m_rhs;
 		curTypeConstraint.m_cfm = info.m_globalCfm;
@@ -181,6 +186,10 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 		for (int j = 0; j < info1.m_numConstraintRows; ++j)
 		{
 			btSIConstraintInfo& c = m_tmpTypedConstraintPool[ curConstraintStartIdx + j];
+			
+			c.m_upperLimit = btMin(c.m_upperLimit, typedC.getBreakingImpulseThreshold());
+			c.m_lowerLimit = btMax(c.m_lowerLimit, -typedC.getBreakingImpulseThreshold());
+
 			btScalar invEffM = _computeBodyEffMass(invIA, invMA, c.m_Ja1) + _computeBodyEffMass(invIB, invMB, c.m_Ja2);
 
 			c.m_invEffM = 1.0f / invEffM;
@@ -457,6 +466,15 @@ void btCustomSISolver::finishSolving(const btContactSolverInfo& info)
 		btSIConstraintInfo& c = m_tmpFrictionConstraintPool[i];
 		c.m_origManifoldPoint->m_appliedImpulseLateral1 = c.m_appliedImpulse;
     }
+
+	for (int i = 0; i < m_tmpTypedConstraintPool.size(); ++i)
+	{
+		btSIConstraintInfo& c = m_tmpTypedConstraintPool[i];
+		if (btFabs(c.m_appliedImpulse) >= c.m_originalContraint->getBreakingImpulseThreshold())
+		{
+			c.m_originalContraint->setEnabled(false);
+		}
+	}
 }
 
 btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold

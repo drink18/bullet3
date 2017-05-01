@@ -41,7 +41,7 @@ public:
 	// setup test cases
 	void setupCase0();
 	void setupCase1();
-	void setupCase2();
+	void setupDemoConstraints();
 	void setupCase3(); // rolling friction
 private:
 	void step(float deltaTime);

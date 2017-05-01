@@ -83,7 +83,7 @@ void TestWei::initPhysics()
 		setupCase1();
 		break;
 	case 2:
-		setupCase2();
+		setupDemoConstraints();
 		break;
 	case 3:
 		setupCase3();
@@ -298,33 +298,6 @@ void TestWei::setupCase1()
 		m_dynamicsWorld->addRigidBody(body);
 	}
 
-	if(false)
-	{
-		btCollisionShape* groundShape = new btBoxShape(btVector3(btScalar(100.),btScalar(100.),btScalar(50.)));
-	
-		m_collisionShapes.push_back(groundShape);
-
-		btTransform groundTransform;
-		groundTransform.setIdentity();
-		groundTransform.setOrigin(btVector3(0,0,-54));
-		//We can also use DemoApplication::localCreateRigidBody, but for clarity it is provided here:
-		btScalar mass(0.);
-
-		//rigidbody is dynamic if and only if mass is non zero, otherwise static
-		bool isDynamic = (mass != 0.f);
-
-		btVector3 localInertia(0,0,0);
-		if (isDynamic)
-			groundShape->calculateLocalInertia(mass,localInertia);
-
-		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,groundShape,localInertia);
-		btRigidBody* body = new btRigidBody(rbInfo);
-		body->setFriction(.1);
-		//add the body to the dynamics world
-		m_dynamicsWorld->addRigidBody(body);
-	}
 	{
 
 		btTransform startTransform; startTransform.setIdentity();
@@ -337,7 +310,7 @@ void TestWei::setupCase1()
 	}
 }
 
-void TestWei::setupCase2()
+void TestWei::setupDemoConstraints()
 {
 	const btScalar THETA = SIMD_PI / 4.f;
 	const btScalar L_1 = (2 - tan(THETA));
@@ -345,6 +318,14 @@ void TestWei::setupCase2()
 	const btScalar RATIO = L_2 / L_1;
 	btRigidBody* bodyA = 0;
 	btRigidBody* bodyB=0;
+	// camera setup
+	{
+		float dist = 25.0f;
+		float pitch = 13.79f;
+		float yaw = 25;
+		float targetPos[3] = {0, 0, 0 };
+		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
 	{
 		btCollisionShape* cylA = new btCylinderShape(btVector3(0.2,0.26,0.2));
 		btCollisionShape* cylB = new btCylinderShape(btVector3(L_2,0.025,L_2));
@@ -378,13 +359,16 @@ void TestWei::setupCase2()
 		btCollisionShape* shape = new btBoxShape(btVector3(CUBE_HALF_EXTENTS, CUBE_HALF_EXTENTS, CUBE_HALF_EXTENTS));
 		btTransform trans;
 		trans.setIdentity();
-		trans.setOrigin(btVector3(0,0,-5));
+		trans.setOrigin(btVector3(0, 3.0f, -5));
 
 		btRigidBody* body0 = createRigidBody( mass,trans,shape);
 		trans.setOrigin(btVector3(2*CUBE_HALF_EXTENTS,20,0));
 		mass = 1.f;
 		btVector3 pivotInA(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,0);
-		btTypedConstraint* p2p = new btPoint2PointConstraint(*body0,pivotInA);
+		btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body0, pivotInA);
+		p2p->m_setting.m_damping = 0.2f;
+		p2p->setParam(BT_CONSTRAINT_CFM, 0.2f);
+		p2p->setParam(BT_CONSTRAINT_ERP, 0.2f);
 		m_dynamicsWorld->addConstraint(p2p);
 		p2p ->setBreakingImpulseThreshold(10.2);
 		p2p->setDbgDrawSize(btScalar(5.f));
