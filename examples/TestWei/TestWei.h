@@ -41,6 +41,7 @@ public:
 	// setup test cases
 	void setupCase0();
 	void setupCase1();
+	void setupCase2();
 private:
 	void step(float deltaTime);
 private:

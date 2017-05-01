@@ -82,6 +82,9 @@ void TestWei::initPhysics()
 	case 1:
 		setupCase1();
 		break;
+	case 2:
+		setupCase2();
+		break;
 	default:
 		break;
 	}
@@ -281,7 +284,7 @@ void TestWei::setupCase1()
 		btTransform groundTransform;
 		groundTransform.setIdentity();
 		groundTransform.setOrigin(btVector3(0, 3, 0));
-		groundTransform.setRotation(btQuaternion(btVector3(1, 0, 0), SIMD_PI*0.03));
+		groundTransform.setRotation(btQuaternion(btVector3(1, 0, 0), SIMD_PI*0.06));
 		//We can also use DemoApplication::localCreateRigidBody, but for clarity it is provided here:
 		btScalar mass(0.);
 
@@ -296,7 +299,6 @@ void TestWei::setupCase1()
 		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, groundShape, localInertia);
 		btRigidBody* body = new btRigidBody(rbInfo);
-		body->setFriction(.5);
 
 		//add the body to the dynamics world
 		m_dynamicsWorld->addRigidBody(body);
@@ -338,6 +340,42 @@ void TestWei::setupCase1()
 
 		startTransform.setOrigin(btVector3(0, 8.0f, 1));
 		createRigidBody(1.0f, startTransform, colShape);
+	}
+}
+
+void TestWei::setupCase2()
+{
+	const btScalar THETA = SIMD_PI / 4.f;
+	const btScalar L_1 = (2 - tan(THETA));
+	const btScalar L_2 = (1 / cos(THETA));
+	const btScalar RATIO = L_2 / L_1;
+	btRigidBody* bodyA = 0;
+	btRigidBody* bodyB=0;
+	{
+		btCollisionShape* cylA = new btCylinderShape(btVector3(0.2,0.26,0.2));
+		btCollisionShape* cylB = new btCylinderShape(btVector3(L_2,0.025,L_2));
+		btCompoundShape* cyl0 = new btCompoundShape();
+		cyl0->addChildShape(btTransform::getIdentity(),cylA);
+		cyl0->addChildShape(btTransform::getIdentity(),cylB);
+
+		btScalar mass = 6.28;
+		btVector3 localInertia;
+		cyl0->calculateLocalInertia(mass,localInertia);
+		btRigidBody::btRigidBodyConstructionInfo ci(mass,0,cyl0,localInertia);
+		ci.m_startWorldTransform.setOrigin(btVector3(-10,2,-8));
+
+
+		btQuaternion orn(btVector3(0,0,1),-THETA);
+		ci.m_startWorldTransform.setRotation(orn);
+
+		btRigidBody* body = new btRigidBody(ci);//1,0,cyl0,localInertia);
+		body->setLinearFactor(btVector3(0,0,0));
+		btHingeConstraint* hinge = new btHingeConstraint(*body,btVector3(0,0,0),btVector3(0,1,0),true);
+		m_dynamicsWorld->addConstraint(hinge);
+		bodyB= body;
+		body->setAngularVelocity(btVector3(0,3,0));
+
+		m_dynamicsWorld->addRigidBody(body);
 	}
 }
 

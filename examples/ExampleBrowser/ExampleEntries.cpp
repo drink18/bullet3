@@ -105,6 +105,7 @@ static ExampleEntry gDefaultExamples[] =
 	ExampleEntry(0, "TestWei"),
 	ExampleEntry(1, "Wei's example", "Baisc example", TestWeiCreateFunc, 0),
 	ExampleEntry(1, "Slope", "Slope example", TestWeiCreateFunc, 1),
+	ExampleEntry(1, "Constraints", "Slope example", TestWeiCreateFunc, 2),
 
 	ExampleEntry(0,"API"),
 

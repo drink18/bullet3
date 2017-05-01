@@ -178,9 +178,9 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 		info2.m_numIterations = info.m_numIterations;
 		typedC.getInfo2(&info2);
 
-		for (int j = curConstraintStartIdx; j < info1.m_numConstraintRows; ++j)
+		for (int j = 0; j < info1.m_numConstraintRows; ++j)
 		{
-			btSIConstraintInfo& c = m_tmpTypedConstraintPool[j];
+			btSIConstraintInfo& c = m_tmpTypedConstraintPool[ curConstraintStartIdx + j];
 			btScalar invEffM = _computeBodyEffMass(invIA, invMA, c.m_Ja1) + _computeBodyEffMass(invIB, invMB, c.m_Ja2);
 
 			c.m_invEffM = 1.0f / invEffM;
