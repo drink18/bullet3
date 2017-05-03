@@ -80,13 +80,13 @@ void TestWei::initPhysics()
 		setupCase0();
 		break;
 	case 1:
-		setupCase1();
+		setupSlopeDemo();
 		break;
 	case 2:
 		setupDemoConstraints();
 		break;
 	case 3:
-		setupCase3();
+		setupSoftContact();
 		break;
 	default:
 		break;
@@ -161,7 +161,7 @@ void TestWei::createEmptyDynamicsWorld()
 	}
 
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
-	m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.005f;
+	//m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.005f;
 
 }
 
@@ -202,6 +202,14 @@ void TestWei::setupCase0()
 	const int ARRAY_SIZE_Y = 5;
 	const int ARRAY_SIZE_X = 5;
 	const int ARRAY_SIZE_Z = 5;
+	// camera setup
+	{
+		float dist = 4.6f;
+		float pitch = -75.0f;
+		float yaw = 31.0f;
+		float targetPos[3] = {0, 0, 0 };
+		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
 
 	//create a few dynamic rigidbodies
 	// Re-using the same collision is better for memory usage and performance
@@ -258,7 +266,7 @@ void TestWei::setupCase0()
 
 }
 
-void TestWei::setupCase1()
+void TestWei::setupSlopeDemo()
 {		  
 	// camera setup
 	{
@@ -303,10 +311,12 @@ void TestWei::setupCase1()
 		btTransform startTransform; startTransform.setIdentity();
 		btBoxShape* colShape = createBoxShape(btVector3(.5f, .5f, .5f));
 		startTransform.setOrigin(btVector3(0, 8.0f, 0));
-		createRigidBody(1.0f, startTransform, colShape);
+		auto bodyA = createRigidBody(1.0f, startTransform, colShape);
+		bodyA->setFriction(0.8f);
 
 		startTransform.setOrigin(btVector3(0, 8.0f, 1));
-		createRigidBody(1.0f, startTransform, colShape);
+		auto bodyB = createRigidBody(1.0f, startTransform, colShape);
+		bodyB->setFriction(0.8f);
 	}
 }
 
@@ -367,15 +377,15 @@ void TestWei::setupDemoConstraints()
 		btVector3 pivotInA(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,0);
 		btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*body0, pivotInA);
 		p2p->m_setting.m_damping = 0.2f;
-		p2p->setParam(BT_CONSTRAINT_CFM, 0.2f);
+		//p2p->setParam(BT_CONSTRAINT_CFM, 0.02f);
 		p2p->setParam(BT_CONSTRAINT_ERP, 0.2f);
 		m_dynamicsWorld->addConstraint(p2p);
-		p2p ->setBreakingImpulseThreshold(10.2);
+		p2p ->setBreakingImpulseThreshold(100.2);
 		p2p->setDbgDrawSize(btScalar(5.f));
 	}
 }
 
-void TestWei::setupCase3()
+void TestWei::setupSoftContact()
 {
 
 	// camera setup

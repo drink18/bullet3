@@ -22,8 +22,8 @@ void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 		btVelocityAccumulator& accu1 = m_accumulatorPool[c.m_accumId1];
 		btVelocityAccumulator& accu2 = m_accumulatorPool[c.m_accumId2];
 
-		jV += accu1.m_pushLinVelocity.dot(c.m_Jl1) + accu1.m_pushAngVelcity.dot(c.m_Ja1);
-		jV += accu2.m_pushLinVelocity.dot(c.m_Jl2) + accu2.m_pushAngVelcity.dot(c.m_Ja2);
+		jV += accu1.m_pushLinVelocity.dot(c.m_Jl1) + accu1.m_pushAngVelocity.dot(c.m_Ja1);
+		jV += accu2.m_pushLinVelocity.dot(c.m_Jl2) + accu2.m_pushAngVelocity.dot(c.m_Ja2);
 		btScalar lambda =  (-jV + c.m_pentrationRhs - c.m_appliedPeneImpulse * c.m_cfm) * c.m_invEffM;
 
 		btScalar  accuLambda = c.m_appliedPeneImpulse + lambda;
@@ -67,12 +67,9 @@ void btCustomSISolver::solve(btSIConstraintInfo& c)
 }
 
 namespace {
-	btScalar _computeBodyEffMass(const btVector3& invI, const btScalar invM, const btVector3& rXn)
+	btScalar _computeBodyEffMass(const btMatrix3x3& invI, const btScalar invM, const btVector3& rXn)
 	{
-		btScalar effM = invM + rXn.x() * rXn.x() * invI.x()
-			+ rXn.y() * rXn.y() * invI.y()
-			+ rXn.z() * rXn.z() * invI.z();
-		return effM;
+		return invM + (invI * rXn).dot(rXn);
 	}
 }
 
@@ -138,8 +135,8 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 
 		btRigidBody& rbA = typedC.getRigidBodyA();
 		btRigidBody& rbB = typedC.getRigidBodyB();
-		btVector3 invIA = rbA.getInvInertiaTensorWorld() * btVector3(1.0f, 1.0f, 1.0f);
-		btVector3 invIB = rbB.getInvInertiaTensorWorld() * btVector3(1.0f, 1.0f, 1.0f);
+		btMatrix3x3 invIA = rbA.getInvInertiaTensorWorld();
+		btMatrix3x3 invIB = rbB.getInvInertiaTensorWorld();
 		btScalar invMA = rbA.getInvMass();
 		btScalar invMB = rbB.getInvMass();
 
@@ -190,7 +187,8 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 			c.m_upperLimit = btMin(c.m_upperLimit, typedC.getBreakingImpulseThreshold());
 			c.m_lowerLimit = btMax(c.m_lowerLimit, -typedC.getBreakingImpulseThreshold());
 
-			btScalar invEffM = _computeBodyEffMass(invIA, invMA, c.m_Ja1) + _computeBodyEffMass(invIB, invMB, c.m_Ja2);
+			btScalar invEffM = _computeBodyEffMass(rbA.getInvInertiaTensorWorld(), invMA, c.m_Ja1)
+				+ _computeBodyEffMass(rbB.getInvInertiaTensorWorld(), invMB, c.m_Ja2);
 
 			c.m_invEffM = 1.0f / invEffM;
 
@@ -234,16 +232,16 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 		btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
 		btVector3 nA = pt.m_normalWorldOnB;
 		btVector3 rXnA = rA.cross(nA);
-		btMatrix3x3 invIMA = bodyA->getInvInertiaTensorWorld();
-		btVector3 invIA(invIMA[0][0], invIMA[1][1], invIMA[2][2]);
+		btMatrix3x3 invIA = bodyA->getInvInertiaTensorWorld();
 		btVector3 rB = pt.getPositionWorldOnB() - bodyB->getWorldTransform().getOrigin();
 		btVector3 nB = -pt.m_normalWorldOnB;
 		btVector3 rXnB = rB.cross(nB);
-		btMatrix3x3 invIMB = bodyB->getInvInertiaTensorWorld();
-		btVector3 invIB(invIMB[0][0], invIMB[1][1], invIMB[2][2]);
+		btMatrix3x3 invIB = bodyB->getInvInertiaTensorWorld();
 
-		btScalar effM1 = _computeBodyEffMass(invIA, bodyA->getInvMass(), rXnA);
-		btScalar effM2 = _computeBodyEffMass(invIB, bodyB->getInvMass(), rXnB);
+		btScalar effM1 = _computeBodyEffMass(bodyA->getInvInertiaTensorWorld(), bodyA->getInvMass(), rXnA);
+		//btScalar effM1 = bodyA->getInvMass() + jA1.dot(invIA);
+		btScalar effM2 = _computeBodyEffMass(bodyB->getInvInertiaTensorWorld(), bodyB->getInvMass(), rXnB);
+		//btScalar effM2 = bodyB->getInvMass() + jA2.dot(invIB);
 
 		btScalar relaxation = info.m_sor;
 		btScalar cfm = info.m_globalCfm * invDt;
@@ -311,12 +309,10 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 {
 	btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
 	btVector3 nA = pt.m_normalWorldOnB;
-	btMatrix3x3 invIMA = bodyA->getInvInertiaTensorWorld();
-	btVector3 invIA(invIMA[0][0], invIMA[1][1], invIMA[2][2]);
+	btMatrix3x3 invIA = bodyA->getInvInertiaTensorWorld();
 	btVector3 rB = pt.getPositionWorldOnB() - bodyB->getWorldTransform().getOrigin();
 	btVector3 nB = -pt.m_normalWorldOnB;
-	btMatrix3x3 invIMB = bodyB->getInvInertiaTensorWorld();
-	btVector3 invIB(invIMB[0][0], invIMB[1][1], invIMB[2][2]);
+	btMatrix3x3 invIB = bodyB->getInvInertiaTensorWorld();
 
 
 	int accuId1 = getOrAllocateAccumulator(bodyA, info);
@@ -445,7 +441,7 @@ void btCustomSISolver::finishSolving(const btContactSolverInfo& info)
 
 		btTransform trans;
 		btTransformUtil::integrateTransform(accum.m_originalBody->getWorldTransform(), accum.m_pushLinVelocity, 
-				accum.m_pushAngVelcity, info.m_timeStep, trans);
+				accum.m_pushAngVelocity, info.m_timeStep, trans);
 		accum.m_originalBody->setWorldTransform(trans);
 
 		//if (body->getInvMass() > 0)

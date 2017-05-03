@@ -40,9 +40,9 @@ public:
 
 	// setup test cases
 	void setupCase0();
-	void setupCase1();
+	void setupSlopeDemo();
 	void setupDemoConstraints();
-	void setupCase3(); // rolling friction
+	void setupSoftContact(); // rolling friction
 private:
 	void step(float deltaTime);
 private:

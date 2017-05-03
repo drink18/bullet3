@@ -41,7 +41,7 @@ public:
 		btVector3 m_linearVelocity;
 		btVector3 m_angularVelocity;
 		btVector3 m_pushLinVelocity;
-		btVector3 m_pushAngVelcity;
+		btVector3 m_pushAngVelocity;
 		btVector3 m_deltaLinearVelocity;
 		btVector3 m_deltaAngularVelocity;
 
@@ -53,7 +53,7 @@ public:
 			, m_angularVelocity(0, 0, 0)
 			, m_linearVelocity(0, 0, 0)
 			, m_pushLinVelocity(0, 0, 0)
-			, m_pushAngVelcity(0, 0, 0)
+			, m_pushAngVelocity(0, 0, 0)
 			, m_deltaLinearVelocity(0, 0, 0)
 			, m_deltaAngularVelocity(0, 0, 0)
 			, m_originalBody(nullptr)
@@ -80,7 +80,7 @@ public:
 		void applyPushImpulse(btScalar impulse,  const btVector3& linearComponent, btVector3& angularComponent)
 		{
 			m_pushLinVelocity += linearComponent * impulse;
-			m_pushAngVelcity += angularComponent * impulse;
+			m_pushAngVelocity += angularComponent * impulse;
 		}
 	};
 
@@ -95,8 +95,8 @@ public:
 		btScalar m_invEffM; // effective mass
 		btScalar m_invM1;  //inver mass 1
 		btScalar m_invM2;  //inversed mass 2
-		btVector3 m_invI1;  //inverse of inertial diag
-		btVector3 m_invI2;  //inverse of inertial diag
+		btMatrix3x3 m_invI1;  //inverse of inertial diag
+		btMatrix3x3 m_invI2;  //inverse of inertial diag
 		btVector3 m_linearFactor1;
 		btVector3 m_linearFactor2;
 		btVector3 m_angularFactor1;
