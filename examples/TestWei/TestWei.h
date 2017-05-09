@@ -20,6 +20,14 @@ public:
 		SovlerType_count
 	};
 
+	enum DemoScene
+	{
+		Wei_BasicExmaple = 0,
+		Wei_SlopeDemo,
+		Wei_Constraint,
+		Wei_SoftContact,
+		Wei_StressTest,
+	};
 public:
 	TestWei(struct GUIHelperInterface* helper, int testCase);
 
@@ -43,6 +51,7 @@ public:
 	void setupSlopeDemo();
 	void setupDemoConstraints();
 	void setupSoftContact(); // rolling friction
+	void setupStressTest(); // rolling friction
 private:
 	void step(float deltaTime);
 private:

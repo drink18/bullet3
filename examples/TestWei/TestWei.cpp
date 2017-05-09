@@ -39,9 +39,17 @@ namespace
 	}
 
 	TestWei::DemoSolverType gDemoSolverType = TestWei::WeiSolver;
+	btScalar gSolverIterations = 10;
 	void setSolverTypeCallback(int buttonId, bool buttonState, void* userPointer)
 	{
 		gDemoSolverType = static_cast<TestWei::DemoSolverType>(buttonId);
+	}
+	void setSolverIterationCountCallback(float val, void* userPtr)
+	{
+		if (btDiscreteDynamicsWorld* world = reinterpret_cast<btDiscreteDynamicsWorld*>(userPtr))
+		{
+			world->getSolverInfo().m_numIterations = btMax(1, int(gSolverIterations));
+		}
 	}
 }
 
@@ -76,17 +84,20 @@ void TestWei::initPhysics()
 
 	switch (m_testCase)
 	{
-	case 0:
+	case Wei_BasicExmaple:
 		setupCase0();
 		break;
-	case 1:
+	case Wei_SlopeDemo:
 		setupSlopeDemo();
 		break;
-	case 2:
+	case Wei_Constraint:
 		setupDemoConstraints();
 		break;
-	case 3:
+	case Wei_SoftContact:
 		setupSoftContact();
+		break;
+	case Wei_StressTest:
+		setupStressTest();
 		break;
 	default:
 		break;
@@ -111,6 +122,16 @@ void TestWei::createUI()
         button.m_callback = setSolverTypeCallback;
         m_guiHelper->getParameterInterface()->registerButtonParameter( button );
     }
+	{
+		// a slider for the number of solver iterations
+		SliderParams slider("Solver iterations", &gSolverIterations);
+		slider.m_minVal = 1.0f;
+		slider.m_maxVal = 30.0f;
+		slider.m_callback = setSolverIterationCountCallback;
+		slider.m_userPointer = m_dynamicsWorld;
+		slider.m_clampToIntegers = true;
+		m_guiHelper->getParameterInterface()->registerSliderFloatParameter(slider);
+	}
 }
 
 void TestWei::renderScene()
@@ -406,6 +427,28 @@ void TestWei::setupSoftContact()
 		body->setActivationState(DISABLE_DEACTIVATION);
 		m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.05f;
 		m_dynamicsWorld->getSolverInfo().m_splitImpulse = false;
+	}
+}
+
+void TestWei::setupStressTest()
+{
+	// camera setup
+	{
+		float dist = 10.7f;
+		float pitch = -75.0f;
+		float yaw = 31;
+		float targetPos[3] = {0, 0, 0 };
+		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
+	{
+		btBoxShape* box = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f));
+		btTransform trans; trans.setIdentity();
+		trans.setOrigin(btVector3(0, 0.5f, 0));
+		btRigidBody* body = createRigidBody(1.0f, trans, box);
+		trans.setOrigin(btVector3(0, 2.0f, 0));
+		btBoxShape* smallBox = new btBoxShape(btVector3(0.45f, 0.45f, 0.45f));
+		btRigidBody* heavyBody = createRigidBody(100.0f, trans, smallBox);
+		body->setActivationState(DISABLE_DEACTIVATION);
 	}
 }
 
