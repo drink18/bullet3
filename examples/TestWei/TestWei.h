@@ -27,21 +27,22 @@ public:
 		Wei_Constraint,
 		Wei_SoftContact,
 		Wei_StressTest,
+		Wei_StressChainTest,
 	};
 public:
 	TestWei(struct GUIHelperInterface* helper, int testCase);
 
 	virtual ~TestWei() {}
-	virtual void initPhysics() override ;
-	virtual void createEmptyDynamicsWorld() override;
-	virtual void renderScene() override;
+	virtual void initPhysics();
+	virtual void createEmptyDynamicsWorld();
+	virtual void renderScene();
 
 	void resetCamera()
 	{
 	}
-    virtual void stepSimulation(float deltaTime) override; 
+    virtual void stepSimulation(float deltaTime); 
 
-	virtual bool keyboardCallback(int key, int state) override;
+	virtual bool keyboardCallback(int key, int state);
 	void createUI();
 	void drawDebugText();
 
@@ -51,14 +52,14 @@ public:
 	void setupSlopeDemo();
 	void setupDemoConstraints();
 	void setupSoftContact(); // rolling friction
-	void setupStressTest(); // rolling friction
+	void setupStressTest(); 
+	void setupStress_Chain(); 
 private:
 	void step(float deltaTime);
 private:
-	btRigidBody* m_body = nullptr;
-	bool m_paused = false;
+	bool m_paused;
 	DemoSolverType m_solverType;
-	int m_testCase = 0;
+	int m_testCase;
 };
 
 

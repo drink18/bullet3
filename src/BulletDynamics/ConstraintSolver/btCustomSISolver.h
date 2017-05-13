@@ -23,9 +23,9 @@ public:
 	virtual btScalar solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
 	, int numManifolds, btTypedConstraint** constraints, int numConstraints
 	, const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
-	, btDispatcher* dispatcher) override;
+	, btDispatcher* dispatcher);
 	///clear internal cached data and reset random seed
-	virtual	void	reset() override;
+	virtual	void	reset();
 
 	virtual btConstraintSolverType	getSolverType() const
 	{
@@ -71,13 +71,13 @@ public:
 			m_angularVelocity += m_deltaAngularVelocity;
 		}
 
-		void applyDeltaImpulse(btScalar impulse,  const btVector3& linearComponent, btVector3& angularComponent)
+		void applyDeltaImpulse(btScalar impulse,  const btVector3& linearComponent, const btVector3& angularComponent)
 		{
 			m_deltaLinearVelocity += linearComponent * impulse;
 			m_deltaAngularVelocity += angularComponent * impulse;
 		}
 
-		void applyPushImpulse(btScalar impulse,  const btVector3& linearComponent, btVector3& angularComponent)
+		void applyPushImpulse(btScalar impulse,  const btVector3& linearComponent, const btVector3& angularComponent)
 		{
 			m_pushLinVelocity += linearComponent * impulse;
 			m_pushAngVelocity += angularComponent * impulse;

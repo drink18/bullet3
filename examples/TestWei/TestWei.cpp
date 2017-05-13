@@ -56,9 +56,9 @@ namespace
 
 TestWei::TestWei(struct GUIHelperInterface* helper, int testCase)
 	: CommonRigidBodyBase(helper),
-	m_testCase(testCase)
+	m_testCase(testCase),
+    m_paused(false)
 {
-
 }
 
 
@@ -99,6 +99,9 @@ void TestWei::initPhysics()
 	case Wei_StressTest:
 		setupStressTest();
 		break;
+    case Wei_StressChainTest:
+        setupStress_Chain();
+        break;
 	default:
 		break;
 	}
@@ -111,7 +114,7 @@ void TestWei::initPhysics()
 void TestWei::createUI()
 {
     // add buttons for switching to different solver types
-	for(int i  = 0 ; i < DemoSolverType::SovlerType_count; ++i)
+	for(int i  = 0 ; i < SovlerType_count; ++i)
     {
 		//char* buttonName = "Sequential impulse solver";
 		char buttonName[256];
@@ -271,7 +274,7 @@ void TestWei::setupCase0()
 				//startTransform.setRotation(btQuaternion(btVector3(0, 0, 1), 0.2f));
 
 
-				m_body = createRigidBody(mass, startTransform, colShape);
+				createRigidBody(mass, startTransform, colShape);
 				//m_body->setActivationState(DISABLE_DEACTIVATION);
 				//m_body->setRestitution(0.5f);
 			}
@@ -288,7 +291,7 @@ void TestWei::setupCase0()
 }
 
 void TestWei::setupSlopeDemo()
-{		  
+{
 	// camera setup
 	{
 		float dist = 10.6f;
@@ -332,11 +335,11 @@ void TestWei::setupSlopeDemo()
 		btTransform startTransform; startTransform.setIdentity();
 		btBoxShape* colShape = createBoxShape(btVector3(.5f, .5f, .5f));
 		startTransform.setOrigin(btVector3(0, 8.0f, 0));
-		auto bodyA = createRigidBody(1.0f, startTransform, colShape);
+		btRigidBody* bodyA = createRigidBody(1.0f, startTransform, colShape);
 		bodyA->setFriction(0.8f);
 
 		startTransform.setOrigin(btVector3(0, 8.0f, 1));
-		auto bodyB = createRigidBody(1.0f, startTransform, colShape);
+		btRigidBody* bodyB = createRigidBody(1.0f, startTransform, colShape);
 		bodyB->setFriction(0.8f);
 	}
 }
@@ -449,6 +452,40 @@ void TestWei::setupStressTest()
 		btBoxShape* smallBox = new btBoxShape(btVector3(0.45f, 0.45f, 0.45f));
 		btRigidBody* heavyBody = createRigidBody(100.0f, trans, smallBox);
 		body->setActivationState(DISABLE_DEACTIVATION);
+	}
+}
+
+void TestWei::setupStress_Chain()
+{
+	// camera setup
+	{
+		float dist = 10.7f;
+		float pitch = -75.0f;
+		float yaw = 31;
+		float targetPos[3] = {0, 0, 0 };
+		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
+	{
+        btSphereShape* sphere = new btSphereShape(0.5f);
+
+        btTransform trans;trans.setIdentity();
+        trans.setOrigin(btVector3(0, 7.0f, 0));
+        btRigidBody* root = createRigidBody(0.0f, trans, sphere);
+
+        btRigidBody* lastChain = root;
+        btVector3 pivot(0, 0, 0);
+
+        const int numSeg = 5;
+        for(int i = 0 ; i < numSeg; ++i)
+        {
+            btScalar mass = i == 0 ? 1.0f : 100.0f;
+            trans.setOrigin(trans.getOrigin() + btVector3(0, -1.0f, 0.0));
+            btRigidBody* chain = createRigidBody(mass, trans, sphere);
+            btPoint2PointConstraint* p2p = new btPoint2PointConstraint(*chain, *lastChain, 
+                    btVector3(0, 0.5f, 0), btVector3(0, -0.5f, 0));
+            m_dynamicsWorld->addConstraint(p2p);
+            lastChain = chain;
+        }
 	}
 }
 
