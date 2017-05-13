@@ -129,7 +129,7 @@ void TestWei::createUI()
 		// a slider for the number of solver iterations
 		SliderParams slider("Solver iterations", &gSolverIterations);
 		slider.m_minVal = 1.0f;
-		slider.m_maxVal = 30.0f;
+		slider.m_maxVal = 200; 
 		slider.m_callback = setSolverIterationCountCallback;
 		slider.m_userPointer = m_dynamicsWorld;
 		slider.m_clampToIntegers = true;
