@@ -1,20 +1,20 @@
-#include "btCustomSISolver.h"
+#include "btWeiSISolver.h"
 #include "BulletCollision/NarrowPhaseCollision/btPersistentManifold.h"
 #include "LinearMath/btIDebugDraw.h"
 
-btCustomSISolver::btCustomSISolver()
+btWeiSISolver::btWeiSISolver()
     :m_debugDrawer(nullptr)
 {
 
 }
 
 
-btCustomSISolver::~btCustomSISolver()
+btWeiSISolver::~btWeiSISolver()
 {
 
 }
 
-void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
+void btWeiSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 {
 	if (c.m_pentrationRhs != 0)
 	{
@@ -40,7 +40,7 @@ void btCustomSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 	}
 }
 
-void btCustomSISolver::solve(btSIConstraintInfo& c)
+void btWeiSISolver::solve(btSIConstraintInfo& c)
 {
 	btVelocityAccumulator& accum1 = m_accumulatorPool[c.m_accumId1];
 	btVelocityAccumulator& accum2 = m_accumulatorPool[c.m_accumId2];
@@ -73,7 +73,7 @@ namespace {
 	}
 }
 
-void btCustomSISolver::initAccumulator(btVelocityAccumulator& accum, btCollisionObject* body, const btContactSolverInfo& info)
+void btWeiSISolver::initAccumulator(btVelocityAccumulator& accum, btCollisionObject* body, const btContactSolverInfo& info)
 {
 	btRigidBody* rigidBody = btRigidBody::upcast(body);
 	if (rigidBody)
@@ -90,7 +90,7 @@ void btCustomSISolver::initAccumulator(btVelocityAccumulator& accum, btCollision
 	}
 }
 
-int btCustomSISolver::getOrAllocateAccumulator(btCollisionObject* btBody, const btContactSolverInfo& info)
+int btWeiSISolver::getOrAllocateAccumulator(btCollisionObject* btBody, const btContactSolverInfo& info)
 {
 	int accumId = btBody->getCompanionId();
 
@@ -105,7 +105,7 @@ int btCustomSISolver::getOrAllocateAccumulator(btCollisionObject* btBody, const 
 	return accumId;
 }
 
-void btCustomSISolver::initAllAccumulators(btCollisionObject** bodies, int numBodies, const btContactSolverInfo& info)
+void btWeiSISolver::initAllAccumulators(btCollisionObject** bodies, int numBodies, const btContactSolverInfo& info)
 {
 	m_accumulatorPool.reserve(numBodies);
 	for (int i = 0; i < numBodies; ++i)
@@ -115,7 +115,7 @@ void btCustomSISolver::initAllAccumulators(btCollisionObject** bodies, int numBo
 
 }
 
-void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& info)
+void btWeiSISolver::setupAllTypedContraint(btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& info)
 {
 	int totalNumRows = 0;
 	for (int i = 0; i < numConstraints; ++i)
@@ -204,7 +204,7 @@ void btCustomSISolver::setupAllTypedContraint(btTypedConstraint** constraints, i
 	}
 }
 
-void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifold, const btContactSolverInfo& info)
+void btWeiSISolver::setupAllContactConstraints( btPersistentManifold& manifold, const btContactSolverInfo& info)
 {
 	const btScalar  invDt = 1.0f / info.m_timeStep;
 	for (int i = 0; i < manifold.getNumContacts(); ++i)
@@ -304,7 +304,7 @@ void btCustomSISolver::setupAllContactConstraints( btPersistentManifold& manifol
 	}
 }
 
-void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* bodyB, btManifoldPoint& pt, 
+void btWeiSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* bodyB, btManifoldPoint& pt, 
 		const btContactSolverInfo& info)
 {
 	btVector3 rA = pt.getPositionWorldOnA() - bodyA->getWorldTransform().getOrigin();
@@ -382,7 +382,7 @@ void btCustomSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* 
 	}
 }
 
-void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
+void btWeiSISolver::solveAllContacts(const btContactSolverInfo& info)
 {
 	for (int i = 0; i < info.m_numIterations; ++i)
 	{
@@ -414,7 +414,7 @@ void btCustomSISolver::solveAllContacts(const btContactSolverInfo& info)
 	}
 }
 
-void btCustomSISolver::solveAllPenetrations(const btContactSolverInfo& info)
+void btWeiSISolver::solveAllPenetrations(const btContactSolverInfo& info)
 {
 	const btScalar dt = info.m_timeStep;
 	for (int iter = 0; iter < info.m_numIterations; ++iter)
@@ -427,7 +427,7 @@ void btCustomSISolver::solveAllPenetrations(const btContactSolverInfo& info)
 	}
 }
 
-void btCustomSISolver::finishSolving(const btContactSolverInfo& info)
+void btWeiSISolver::finishSolving(const btContactSolverInfo& info)
 {
 	for (int i = 0; i < m_accumulatorPool.size(); ++i)
 	{
@@ -473,7 +473,7 @@ void btCustomSISolver::finishSolving(const btContactSolverInfo& info)
 	}
 }
 
-btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
+btScalar btWeiSISolver::solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
 	, int numManifolds, btTypedConstraint** constraints, int numConstraints
 	, const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
 	, btDispatcher* dispatcher)
@@ -506,6 +506,6 @@ btScalar btCustomSISolver::solveGroup(btCollisionObject** bodies, int numBodies,
 }
 
 
-void btCustomSISolver::reset()
+void btWeiSISolver::reset()
 {
 }

@@ -11,14 +11,14 @@ class btCollisionObject;
 #include "BulletCollision/NarrowPhaseCollision/btManifoldPoint.h"
 #include "BulletDynamics/ConstraintSolver/btConstraintSolver.h"
 
-ATTRIBUTE_ALIGNED16(class) btCustomSISolver :
+ATTRIBUTE_ALIGNED16(class) btWeiSISolver :
 public btConstraintSolver
 {
 public:
 	BT_DECLARE_ALIGNED_ALLOCATOR();
 
-	btCustomSISolver();
-	virtual ~btCustomSISolver();
+	btWeiSISolver();
+	virtual ~btWeiSISolver();
 
 	virtual btScalar solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
 	, int numManifolds, btTypedConstraint** constraints, int numConstraints

@@ -8,7 +8,7 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "../CommonInterfaces/CommonParameterInterface.h"
 
-#include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
+#include "BulletDynamics/ConstraintSolver/btWeiSISolver.h"
 #include "BulletDynamics/Featherstone/btMultiBodyDynamicsWorld.h"
 #include "BulletDynamics/MLCPSolvers/btDantzigSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
@@ -83,7 +83,7 @@ void TestWei::initPhysics()
 	groundTransform.setOrigin(btVector3(0, -50, 0));
 
 	createRigidBody(0, groundTransform, groundShape, btVector4(0, 0, 1, 1));
-	m_solver = new btCustomSISolver();
+	m_solver = new btWeiSISolver();
 
 
 	switch (m_testCase)
@@ -182,7 +182,7 @@ void TestWei::createEmptyDynamicsWorld()
 		m_solver = new btSequentialImpulseConstraintSolver;
 		break;
 	case WeiSolver:
-		m_solver = new btCustomSISolver();
+		m_solver = new btWeiSISolver();
 		break;
 	case BT_MLCP:
 		m_solver = new btMLCPSolver(new btDantzigSolver());
