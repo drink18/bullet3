@@ -9,6 +9,7 @@
 #include "../CommonInterfaces/CommonParameterInterface.h"
 
 #include "BulletDynamics/ConstraintSolver/btCustomSISolver.h"
+#include "BulletDynamics/Featherstone/btMultiBodyDynamicsWorld.h"
 #include "BulletDynamics/MLCPSolvers/btDantzigSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
@@ -191,6 +192,7 @@ void TestWei::createEmptyDynamicsWorld()
 	}
 
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
+	//m_dynamicsWorld = new btMultiBodyDynamicsWorld(m_dispatcher,m_broadphase, m_solver, m_collisionConfiguration);
 	//m_dynamicsWorld->getSolverInfo().m_globalCfm = 0.005f;
 
 }
@@ -492,6 +494,31 @@ void TestWei::setupStress_Chain()
             m_dynamicsWorld->addConstraint(p2p);
             lastChain = chain;
         }
+	}
+	// chain using revolve constraint
+	{
+		btScalar segHalfLen = 0.5f;
+		btBoxShape* box = new btBoxShape(btVector3(0.5f, segHalfLen, 0.1f));
+
+		btTransform trans; trans.setIdentity();
+		trans.setOrigin(btVector3(0, 7.0f, 3));
+		btRigidBody* root = createRigidBody(0.0f, trans, box);
+		btRigidBody* lastChain = root;
+
+		const int numSeg = 5;
+		for (int i = 0; i < numSeg; ++i)
+		{
+			btScalar mass = 1.0f;
+			trans.setOrigin(trans.getOrigin() + btVector3(0, -segHalfLen * 2, 0.0f));
+			btRigidBody* chain = createRigidBody(mass, trans, box);
+
+			btHingeConstraint* hinge = new btHingeConstraint(*lastChain, *chain,
+				btVector3(0, -segHalfLen, 0), btVector3(0, segHalfLen, 0),
+				btVector3(1.0f, 0, 0), btVector3(1.0f, 0, 0));
+			m_dynamicsWorld->addConstraint(hinge);
+
+			lastChain = chain;
+		}
 	}
 }
 
