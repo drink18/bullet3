@@ -10,7 +10,7 @@
 
 class CommonExampleInterface* TestWeiCreateFunc(struct CommonExampleOptions& options);
 
-class TestWei : public CommonRigidBodyBase
+class TestWeiMultiBody : public CommonRigidBodyBase
 {
 public:
 	enum DemoSolverType
@@ -23,18 +23,12 @@ public:
 
 	enum DemoScene
 	{
-		Wei_BasicExmaple = 0,
-		Wei_SlopeDemo,
-		Wei_Constraint,
-		Wei_SoftContact,
-		Wei_StressTest,
-		Wei_StressChainTest,
-		Wei_ChainBridge,
+		Wei_ChainBridge = 0
 	};
 public:
-	TestWei(struct GUIHelperInterface* helper, int testCase);
+	TestWeiMultiBody(struct GUIHelperInterface* helper, int testCase);
 
-	virtual ~TestWei() {}
+	virtual ~TestWeiMultiBody() {}
 	virtual void initPhysics();
 	virtual void createEmptyDynamicsWorld();
 	virtual void renderScene();
@@ -50,12 +44,6 @@ public:
 
 
 	// setup test cases
-	void setupCase0();
-	void setupSlopeDemo();
-	void setupDemoConstraints();
-	void setupSoftContact(); // rolling friction
-	void setupStressTest(); 
-	void setupStress_Chain(); 
 	void setupChainBridge(); 
 private:
 	void step(float deltaTime);
