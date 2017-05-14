@@ -106,6 +106,9 @@ void TestWei::initPhysics()
     case Wei_StressChainTest:
         setupStress_Chain();
         break;
+    case Wei_ChainBridge:
+        setupChainBridge();
+        break;
 	default:
 		break;
 	}
@@ -519,6 +522,70 @@ void TestWei::setupStress_Chain()
 
 			lastChain = chain;
 		}
+	}
+}
+
+void TestWei::setupChainBridge()
+{
+	// camera setup
+	{
+		float dist = 11.7f;
+		float pitch = -10.0f;
+		float yaw = 35;
+		float targetPos[3] = {0, 0, 0 };
+		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
+	{
+		const btScalar pillarH = 6.0f;
+		btBoxShape* bigBox = new btBoxShape(btVector3(1, pillarH / 2, 1));
+		btTransform trans; trans.setIdentity();
+		trans.setOrigin(btVector3(-4, pillarH / 2, 0));
+		btRigidBody* pillarA = createRigidBody(0, trans, bigBox);
+		trans.setOrigin(btVector3(4, pillarH / 2, 0));
+		btRigidBody* pillarB = createRigidBody(0, trans, bigBox);
+		btRigidBody* lastChain = pillarA;
+		btRigidBody* firstChain = nullptr;
+
+		const btScalar chainHalfLen = 0.5f;
+		const btScalar chainMass = 1.0f;
+		btBoxShape* chainShape = new btBoxShape(btVector3(chainHalfLen, 0.05f, 0.35f));
+		const int numChain = 6;
+		btTransform chainTrans; chainTrans.setIdentity();
+		chainTrans.setOrigin(btVector3(-2.0f, pillarH, 0));
+		for (int i = 0; i < numChain; ++i)
+		{
+			btRigidBody* chain = createRigidBody(chainMass, chainTrans, chainShape);
+			chainTrans.setOrigin(chainTrans.getOrigin() + btVector3(chainHalfLen * 2, 0, 0));
+			if (i == 0)
+			{
+				firstChain = chain;
+			}
+			else
+			{
+				btHingeConstraint* hinge = new btHingeConstraint(*lastChain, *chain,
+					btVector3(chainHalfLen, 0, 0), btVector3(-chainHalfLen, 0, 0),
+					btVector3(0, 0, 1), btVector3(0, 0, 1));
+				m_dynamicsWorld->addConstraint(hinge);
+			}
+			lastChain = chain;
+		}
+
+		btHingeConstraint* hingeA = new btHingeConstraint(*pillarA, *firstChain,
+			btVector3(1.1f, pillarH / 2, 0), btVector3(-chainHalfLen, 0, 0),
+			btVector3(0, 0, 1), btVector3(0, 0, 1));
+		m_dynamicsWorld->addConstraint(hingeA);
+		btHingeConstraint* hingeB = new btHingeConstraint(*pillarB, *lastChain,
+			btVector3(-1.1f, pillarH / 2, 0), btVector3(chainHalfLen, 0, 0),
+			btVector3(0, 0, 1), btVector3(0, 0, 1));
+		m_dynamicsWorld->addConstraint(hingeB);
+	}
+	{
+		// drop a heavy box
+		btBoxShape* box = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f));
+		btTransform trans; trans.setIdentity();
+		trans.setOrigin(btVector3(0, 10.0f, 0));
+		const btScalar mass = 50.0f;
+		createRigidBody(mass, trans, box);
 	}
 }
 

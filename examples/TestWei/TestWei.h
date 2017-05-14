@@ -29,6 +29,7 @@ public:
 		Wei_SoftContact,
 		Wei_StressTest,
 		Wei_StressChainTest,
+		Wei_ChainBridge,
 	};
 public:
 	TestWei(struct GUIHelperInterface* helper, int testCase);
@@ -55,6 +56,7 @@ public:
 	void setupSoftContact(); // rolling friction
 	void setupStressTest(); 
 	void setupStress_Chain(); 
+	void setupChainBridge(); 
 private:
 	void step(float deltaTime);
 private:

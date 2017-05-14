@@ -109,6 +109,7 @@ static ExampleEntry gDefaultExamples[] =
 	ExampleEntry(1, "Soft contact", "Soft Contact", TestWeiCreateFunc, TestWei::Wei_SoftContact),
 	ExampleEntry(1, "Stress Test", "Heavy over light", TestWeiCreateFunc, TestWei::Wei_StressTest),
 	ExampleEntry(1, "Chain Stress Test", "Chain ", TestWeiCreateFunc, TestWei::Wei_StressChainTest),
+	ExampleEntry(1, "Chain Bridge", "Bridage made by chained box", TestWeiCreateFunc, TestWei::Wei_ChainBridge),
 
 	ExampleEntry(0,"API"),
 
