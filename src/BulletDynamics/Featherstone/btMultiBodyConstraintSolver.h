@@ -17,7 +17,9 @@ subject to the following restrictions:
 #define BT_MULTIBODY_CONSTRAINT_SOLVER_H
 
 #include "BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h"
+#include "BulletDynamics/ConstraintSolver/btWeiSISolver.h"
 #include "btMultiBodySolverConstraint.h"
+#include "btMultiBodyConstraintSolverI.h"
 
 #define DIRECTLY_UPDATE_VELOCITY_DURING_SOLVER_ITERATIONS
 
@@ -27,7 +29,8 @@ class btMultiBody;
 
 
 
-ATTRIBUTE_ALIGNED16(class) btMultiBodyConstraintSolver : public btSequentialImpulseConstraintSolver
+ATTRIBUTE_ALIGNED16(class) btMultiBodyConstraintSolver :  public btMultiBodyConstraintSolverI, 
+public btSequentialImpulseConstraintSolver
 {
 
 protected:
@@ -81,6 +84,7 @@ protected:
 	virtual btScalar solveSingleIteration(int iteration, btCollisionObject** bodies ,int numBodies,btPersistentManifold** manifoldPtr, int numManifolds,btTypedConstraint** constraints,int numConstraints,const btContactSolverInfo& infoGlobal,btIDebugDraw* debugDrawer);
 	void	applyDeltaVee(btScalar* deltaV, btScalar impulse, int velocityIndex, int ndof);
 	void writeBackSolverBodyToMultiBody(btMultiBodySolverConstraint& constraint, btScalar deltaTime);
+
 public:
 
 	BT_DECLARE_ALIGNED_ALLOCATOR();
@@ -90,6 +94,7 @@ public:
 	virtual btScalar solveGroupCacheFriendlyFinish(btCollisionObject** bodies,int numBodies,const btContactSolverInfo& infoGlobal);
 	
 	virtual void solveMultiBodyGroup(btCollisionObject** bodies,int numBodies,btPersistentManifold** manifold,int numManifolds,btTypedConstraint** constraints,int numConstraints,btMultiBodyConstraint** multiBodyConstraints, int numMultiBodyConstraints, const btContactSolverInfo& info, btIDebugDraw* debugDrawer,btDispatcher* dispatcher);
+	virtual btConstraintSolver* getBaseSolver() { return this; }
 };
 
 	

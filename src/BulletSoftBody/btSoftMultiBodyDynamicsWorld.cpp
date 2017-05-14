@@ -28,7 +28,7 @@ subject to the following restrictions:
 btSoftMultiBodyDynamicsWorld::btSoftMultiBodyDynamicsWorld(
 	btDispatcher* dispatcher,
 	btBroadphaseInterface* pairCache,
-	btMultiBodyConstraintSolver* constraintSolver,
+	btMultiBodyConstraintSolverI* constraintSolver,
 	btCollisionConfiguration* collisionConfiguration,
 	btSoftBodySolver *softBodySolver ) : 
 		btMultiBodyDynamicsWorld(dispatcher,pairCache,constraintSolver,collisionConfiguration),

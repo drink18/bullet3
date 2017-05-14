@@ -1,4 +1,4 @@
-#include "TestWei.h"
+#include "TestWeiMultiBody.h"
 
 #include "btBulletDynamicsCommon.h"
 
@@ -114,6 +114,7 @@ void TestWei::initPhysics()
 	}
     //m_body->setLinearVelocity(btVector3(-3.5f, 0, 0));
 	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
+
 
 #if  !defined(B3_USE_STANDALONE_EXAMPLE)
 	createUI();

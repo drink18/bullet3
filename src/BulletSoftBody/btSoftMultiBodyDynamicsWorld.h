@@ -49,7 +49,7 @@ protected:
 
 public:
 
-	btSoftMultiBodyDynamicsWorld(btDispatcher* dispatcher,btBroadphaseInterface* pairCache,btMultiBodyConstraintSolver* constraintSolver, btCollisionConfiguration* collisionConfiguration, btSoftBodySolver *softBodySolver = 0 );
+	btSoftMultiBodyDynamicsWorld(btDispatcher* dispatcher,btBroadphaseInterface* pairCache,btMultiBodyConstraintSolverI* constraintSolver, btCollisionConfiguration* collisionConfiguration, btSoftBodySolver *softBodySolver = 0 );
 
 	virtual ~btSoftMultiBodyDynamicsWorld();
 

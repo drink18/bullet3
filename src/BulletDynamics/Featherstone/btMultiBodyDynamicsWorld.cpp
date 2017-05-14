@@ -15,6 +15,7 @@ subject to the following restrictions:
 
 #include "btMultiBodyDynamicsWorld.h"
 #include "btMultiBodyConstraintSolver.h"
+#include "btMultiBodyConstraintSolverI.h"
 #include "btMultiBody.h"
 #include "btMultiBodyLinkCollider.h"
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
@@ -226,7 +227,7 @@ class btSortMultiBodyConstraintOnIslandPredicate
 struct MultiBodyInplaceSolverIslandCallback : public btSimulationIslandManager::IslandCallback
 {
 	btContactSolverInfo*	m_solverInfo;
-	btMultiBodyConstraintSolver*		m_solver;
+	btMultiBodyConstraintSolverI*		m_solver;
 	btMultiBodyConstraint**		m_multiBodySortedConstraints;
 	int							m_numMultiBodyConstraints;
 	
@@ -241,7 +242,7 @@ struct MultiBodyInplaceSolverIslandCallback : public btSimulationIslandManager::
 	btAlignedObjectArray<btMultiBodyConstraint*> m_multiBodyConstraints;
 
 
-	MultiBodyInplaceSolverIslandCallback(	btMultiBodyConstraintSolver*	solver,
+	MultiBodyInplaceSolverIslandCallback(	btMultiBodyConstraintSolverI*	solver,
 									btDispatcher* dispatcher)
 		:m_solverInfo(NULL),
 		m_solver(solver),
@@ -379,8 +380,8 @@ struct MultiBodyInplaceSolverIslandCallback : public btSimulationIslandManager::
 
 
 
-btMultiBodyDynamicsWorld::btMultiBodyDynamicsWorld(btDispatcher* dispatcher,btBroadphaseInterface* pairCache,btMultiBodyConstraintSolver* constraintSolver,btCollisionConfiguration* collisionConfiguration)
-	:btDiscreteDynamicsWorld(dispatcher,pairCache,constraintSolver,collisionConfiguration),
+btMultiBodyDynamicsWorld::btMultiBodyDynamicsWorld(btDispatcher* dispatcher,btBroadphaseInterface* pairCache,btMultiBodyConstraintSolverI* constraintSolver,btCollisionConfiguration* collisionConfiguration)
+	:btDiscreteDynamicsWorld(dispatcher,pairCache,constraintSolver->getBaseSolver(),collisionConfiguration),
 	m_multiBodyConstraintSolver(constraintSolver)
 {
 	//split impulse is not yet supported for Featherstone hierarchies

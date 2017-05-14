@@ -23,6 +23,7 @@ subject to the following restrictions:
 class btMultiBody;
 class btMultiBodyConstraint;
 class btMultiBodyConstraintSolver;
+class btMultiBodyConstraintSolverI;
 struct MultiBodyInplaceSolverIslandCallback;
 
 ///The btMultiBodyDynamicsWorld adds Featherstone multi body dynamics to Bullet
@@ -33,7 +34,7 @@ protected:
 	btAlignedObjectArray<btMultiBody*> m_multiBodies;
 	btAlignedObjectArray<btMultiBodyConstraint*> m_multiBodyConstraints;
 	btAlignedObjectArray<btMultiBodyConstraint*> m_sortedMultiBodyConstraints;
-	btMultiBodyConstraintSolver*	m_multiBodyConstraintSolver;
+	btMultiBodyConstraintSolverI*	m_multiBodyConstraintSolver;
 	MultiBodyInplaceSolverIslandCallback*	m_solverMultiBodyIslandCallback;
 
 	//cached data to avoid memory allocations
@@ -54,7 +55,7 @@ protected:
 
 public:
 
-	btMultiBodyDynamicsWorld(btDispatcher* dispatcher,btBroadphaseInterface* pairCache,btMultiBodyConstraintSolver* constraintSolver,btCollisionConfiguration* collisionConfiguration);
+	btMultiBodyDynamicsWorld(btDispatcher* dispatcher,btBroadphaseInterface* pairCache,btMultiBodyConstraintSolverI* constraintSolver,btCollisionConfiguration* collisionConfiguration);
 
 	virtual ~btMultiBodyDynamicsWorld ();
 
