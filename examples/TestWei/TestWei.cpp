@@ -31,6 +31,9 @@ namespace
 		case TestWei::WeiSolver:
 			name = "Wei solver";
 			break;
+		case TestWei::BT_MLCP:
+			name = "MLCP solver";
+			break;
 		default:
 			break;
 		}
@@ -179,6 +182,9 @@ void TestWei::createEmptyDynamicsWorld()
 		break;
 	case WeiSolver:
 		m_solver = new btCustomSISolver();
+		break;
+	case BT_MLCP:
+		m_solver = new btMLCPSolver(new btDantzigSolver());
 		break;
 	default:
 		break;

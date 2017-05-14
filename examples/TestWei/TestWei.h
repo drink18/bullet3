@@ -17,6 +17,7 @@ public:
 	{
 		BT_SequentialSolver  = 0,
 		WeiSolver = 1,
+		BT_MLCP = 2,
 		SovlerType_count
 	};
 
