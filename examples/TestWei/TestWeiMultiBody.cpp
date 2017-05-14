@@ -15,6 +15,8 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 #include "BulletDynamics/Featherstone/btMultiBodyConstraintSolver.h"
+#include "BulletDynamics/Featherstone/btMultiBodyLinkCollider.h"
+#include "BulletDynamics/Featherstone/btMultiBodyFixedConstraint.h"
 
 
 
@@ -56,11 +58,18 @@ namespace
 			world->getSolverInfo().m_numIterations = btMax(1, int(gSolverIterations));
 		}
 	}
+
 }
 
+void TestWeiMultiBody::spawnBox(const btTransform& initTrans, const btVector3& halfExt, const btScalar mass)
+{
+	btBoxShape* shape = new btBoxShape(halfExt);
+	createRigidBody(mass, initTrans, shape);
+	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
+}
 
 TestWeiMultiBody::TestWeiMultiBody(struct GUIHelperInterface* helper, int testCase)
-	: CommonRigidBodyBase(helper),
+	:CommonMultiBodyBase(helper),
 	m_testCase(testCase),
     m_paused(false)
 {
@@ -69,6 +78,7 @@ TestWeiMultiBody::TestWeiMultiBody(struct GUIHelperInterface* helper, int testCa
 
 void TestWeiMultiBody::initPhysics()
 {
+	m_solver = new btMultiBodyConstraintSolver;
 	m_guiHelper->setUpAxis(1);
 	createEmptyDynamicsWorld();
 	m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
@@ -84,7 +94,6 @@ void TestWeiMultiBody::initPhysics()
 	groundTransform.setOrigin(btVector3(0, -50, 0));
 
 	createRigidBody(0, groundTransform, groundShape, btVector4(0, 0, 1, 1));
-	m_solver = new btWeiSISolver();
 
 
 	switch (m_testCase)
@@ -133,7 +142,7 @@ void TestWeiMultiBody::createUI()
 void TestWeiMultiBody::renderScene()
 {
 	drawDebugText();
-	CommonRigidBodyBase::renderScene();
+	CommonMultiBodyBase::renderScene();
 }
 
 void TestWeiMultiBody::drawDebugText()
@@ -182,9 +191,8 @@ void TestWeiMultiBody::createEmptyDynamicsWorld()
 	}
 #endif
 
-	btMultiBodyConstraintSolver* sol = new btMultiBodyConstraintSolver;
 
-	m_dynamicsWorld = new btMultiBodyDynamicsWorld(m_dispatcher,m_broadphase, sol, m_collisionConfiguration);
+	m_dynamicsWorld = new btMultiBodyDynamicsWorld(m_dispatcher,m_broadphase, m_solver, m_collisionConfiguration);
 
 }
 
@@ -197,7 +205,7 @@ void TestWeiMultiBody::stepSimulation(float deltaTime)
 
 void TestWeiMultiBody::step(float deltaTime)
 {
-	CommonRigidBodyBase::stepSimulation(deltaTime);
+	CommonMultiBodyBase::stepSimulation(deltaTime);
 }
 
 
@@ -217,7 +225,15 @@ bool TestWeiMultiBody::keyboardCallback(int key, int state)
 		return false;
 	}
 
-	return CommonRigidBodyBase::keyboardCallback(key, state);
+	if (key == B3G_F7 && state == 0)
+	{
+		btTransform trans;
+		trans.setIdentity();
+		trans.setOrigin(btVector3(0, 7, 0));
+		spawnBox(trans, btVector3(0.5f, 0.5f, 0.5f), 100);
+	}
+
+	return CommonMultiBodyBase::keyboardCallback(key, state);
 }
 
 
@@ -232,63 +248,209 @@ void TestWeiMultiBody::setupChainBridge()
 		m_guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
 	}
 	{
-		const btScalar pillarH = 6.0f;
-		btBoxShape* bigBox = new btBoxShape(btVector3(1, pillarH / 2, 1));
-		btTransform trans; trans.setIdentity();
-		trans.setOrigin(btVector3(-4, pillarH / 2, 0));
-		btRigidBody* pillarA = createRigidBody(0, trans, bigBox);
-		trans.setOrigin(btVector3(4, pillarH / 2, 0));
-		btRigidBody* pillarB = createRigidBody(0, trans, bigBox);
-		btRigidBody* lastChain = pillarA;
-		btRigidBody* firstChain = nullptr;
+		const btScalar pillarH = 3.0f;
+		btVector3 baseHalfExt(0.5f, pillarH, 0.5f);
+		btVector3 linkHalfExt(0.5f, 0.05f, 0.5f);
+		const int numSeg = 8;
 
-		const btScalar chainHalfLen = 0.5f;
-		const btScalar chainMass = 1.0f;
-		btBoxShape* chainShape = new btBoxShape(btVector3(chainHalfLen, 0.05f, 0.35f));
-		const int numChain = 6;
-		btTransform chainTrans; chainTrans.setIdentity();
-		chainTrans.setOrigin(btVector3(-2.0f, pillarH, 0));
-		for (int i = 0; i < numChain; ++i)
+		btScalar linkMass = 1.0f;
+		btVector3 linkIteriaDiag(0, 0, 0);
+		btCollisionShape *linkShape = new btBoxShape(linkHalfExt);
+		linkShape->calculateLocalInertia(linkMass, linkIteriaDiag);
+		delete linkShape;
+		btMultiBody* bridgeMB = new btMultiBody(numSeg, 0, btVector3(0, 0, 0), true, true);
+
+		//init base
+		btQuaternion baseQuat = btQuaternion::getIdentity();
+		bridgeMB->setBasePos(btVector3(-4.0f, pillarH, 0));
+		bridgeMB->setWorldToBaseRot(baseQuat);
+
+		//init links
+		btVector3 hingeJointAxis(0, 0, 1);
+
+		btVector3 parentComToCurrentCom(linkHalfExt[0] + baseHalfExt[0], baseHalfExt[1] + linkHalfExt[1], 0);
+		btVector3 currentPivotToCurrentCom(linkHalfExt[0], 0, 0);
+		btVector3 parentComToCurrentPivot = parentComToCurrentCom - currentPivotToCurrentCom;
+		btQuaternion rotParentToLink = btQuaternion::getIdentity();// btVector3(0, 0, 1), SIMD_PI / 2);
+
+		btScalar q0 = 0.f * SIMD_PI / 180.0f;
+		btQuaternion quat0(btVector3(0, 1, 0).normalized(), q0);
+
+		for (int i = 0; i < numSeg; ++i)
 		{
-			btRigidBody* chain = createRigidBody(chainMass, chainTrans, chainShape);
-			chainTrans.setOrigin(chainTrans.getOrigin() + btVector3(chainHalfLen * 2, 0, 0));
-			if (i == 0)
-			{
-				firstChain = chain;
-			}
-			else
-			{
-				btHingeConstraint* hinge = new btHingeConstraint(*lastChain, *chain,
-					btVector3(chainHalfLen, 0, 0), btVector3(-chainHalfLen, 0, 0),
-					btVector3(0, 0, 1), btVector3(0, 0, 1));
-				m_dynamicsWorld->addConstraint(hinge);
-			}
-			lastChain = chain;
-		}
+			bridgeMB->setupRevolute(i, linkMass, linkIteriaDiag, i - 1,
+				rotParentToLink,
+				hingeJointAxis, parentComToCurrentPivot,
+				currentPivotToCurrentCom, true);
 
-		btHingeConstraint* hingeA = new btHingeConstraint(*pillarA, *firstChain,
-			btVector3(1.1f, pillarH / 2, 0), btVector3(-chainHalfLen, 0, 0),
-			btVector3(0, 0, 1), btVector3(0, 0, 1));
-		m_dynamicsWorld->addConstraint(hingeA);
-		btHingeConstraint* hingeB = new btHingeConstraint(*pillarB, *lastChain,
-			btVector3(-1.1f, pillarH / 2, 0), btVector3(chainHalfLen, 0, 0),
-			btVector3(0, 0, 1), btVector3(0, 0, 1));
-		m_dynamicsWorld->addConstraint(hingeB);
-	}
-	{
-		// drop a heavy box
-		btBoxShape* box = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f));
-		btTransform trans; trans.setIdentity();
-		trans.setOrigin(btVector3(0, 10.0f, 0));
-		const btScalar mass = 50.0f;
-		createRigidBody(mass, trans, box);
+			rotParentToLink = btQuaternion::getIdentity();
+			parentComToCurrentCom.setValue(linkHalfExt[0] * 2, 0, 0);
+			currentPivotToCurrentCom.setValue(linkHalfExt[0], 0, 0);
+			parentComToCurrentPivot = parentComToCurrentCom - currentPivotToCurrentCom;
+		}
+		bridgeMB->finalizeMultiDof();
+		((btMultiBodyDynamicsWorld*)m_dynamicsWorld)->addMultiBody(bridgeMB);
+
+		addColliders_testMultiDof(bridgeMB, (btMultiBodyDynamicsWorld*)m_dynamicsWorld, baseHalfExt, linkHalfExt);
+
+		btMatrix3x3 frameInA; frameInA.setIdentity();
+		btMatrix3x3 frameInB; frameInB.setIdentity();
+		btMultiBodyFixedConstraint* fcA = new btMultiBodyFixedConstraint(bridgeMB, 0, 
+			bridgeMB, -1, 
+			btVector3(linkHalfExt[0], 0, 0), 
+			btVector3(baseHalfExt[0], baseHalfExt[1], 0),
+			frameInA, frameInB
+			);
+		btScalar relaxe = 0.3f;
+		btMultiBodyFixedConstraint* fcB = new btMultiBodyFixedConstraint(bridgeMB, numSeg - 1,
+			bridgeMB, -1, 
+			btVector3(linkHalfExt[0], 0, 0), 
+			btVector3(linkHalfExt[0] * numSeg  * 2 - relaxe + baseHalfExt[0], baseHalfExt[1], 0),
+			frameInA, frameInB
+			);
+
+		m_dynamicsWorld->addMultiBodyConstraint(fcA);
+		m_dynamicsWorld->addMultiBodyConstraint(fcB);
 	}
 }
 
-CommonExampleInterface* TestWeiCreateFunc(CommonExampleOptions& options)
+btMultiBody* TestWeiMultiBody::createFeatherstoneMultiBody_testMultiDof(btMultiBodyDynamicsWorld *pWorld, int numLinks, const btVector3 &basePosition, const btVector3 &baseHalfExtents, const btVector3 &linkHalfExtents, bool spherical, bool floating)
+{
+	//init the base	
+	btVector3 baseInertiaDiag(0.f, 0.f, 0.f);
+	float baseMass = 1.f;
+	
+	if(baseMass)
+	{
+		btCollisionShape *pTempBox = new btBoxShape(btVector3(baseHalfExtents[0], baseHalfExtents[1], baseHalfExtents[2]));
+		pTempBox->calculateLocalInertia(baseMass, baseInertiaDiag);
+		delete pTempBox;
+	}
+
+	bool canSleep = false;
+	
+	btMultiBody *pMultiBody = new btMultiBody(numLinks, baseMass, baseInertiaDiag, !floating, canSleep);
+
+	btQuaternion baseOriQuat(0.f, 0.f, 0.f, 1.f);
+	pMultiBody->setBasePos(basePosition);
+	pMultiBody->setWorldToBaseRot(baseOriQuat);
+	btVector3 vel(0, 0, 0);
+//	pMultiBody->setBaseVel(vel);
+
+	//init the links	
+	btVector3 hingeJointAxis(1, 0, 0);
+	float linkMass = 1.f;
+	btVector3 linkInertiaDiag(0.f, 0.f, 0.f);
+
+	btCollisionShape *pTempBox = new btBoxShape(btVector3(linkHalfExtents[0], linkHalfExtents[1], linkHalfExtents[2]));
+	pTempBox->calculateLocalInertia(linkMass, linkInertiaDiag);
+	delete pTempBox;
+
+	//y-axis assumed up
+	btVector3 parentComToCurrentCom(0, -linkHalfExtents[1] * 2.f, 0);						//par body's COM to cur body's COM offset	
+	btVector3 currentPivotToCurrentCom(0, -linkHalfExtents[1], 0);							//cur body's COM to cur body's PIV offset
+	btVector3 parentComToCurrentPivot = parentComToCurrentCom - currentPivotToCurrentCom;	//par body's COM to cur body's PIV offset
+
+	//////
+	btScalar q0 = 0.f * SIMD_PI/ 180.f;
+	btQuaternion quat0(btVector3(0, 1, 0).normalized(), q0);
+	quat0.normalize();	
+	/////
+
+	for(int i = 0; i < numLinks; ++i)
+	{
+		if(!spherical)			
+			pMultiBody->setupRevolute(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f), hingeJointAxis, parentComToCurrentPivot, currentPivotToCurrentCom, true);
+		else
+			//pMultiBody->setupPlanar(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f)/*quat0*/, btVector3(1, 0, 0), parentComToCurrentPivot*2, false);
+			pMultiBody->setupSpherical(i, linkMass, linkInertiaDiag, i - 1, btQuaternion(0.f, 0.f, 0.f, 1.f), parentComToCurrentPivot, currentPivotToCurrentCom, true);
+	}
+
+	pMultiBody->finalizeMultiDof();
+
+	///
+	pWorld->addMultiBody(pMultiBody);
+	///
+	return pMultiBody;
+}
+
+void TestWeiMultiBody::addColliders_testMultiDof(btMultiBody *pMultiBody, btMultiBodyDynamicsWorld *pWorld, const btVector3 &baseHalfExtents, const btVector3 &linkHalfExtents)
+{			
+	
+	btAlignedObjectArray<btQuaternion> world_to_local;
+	world_to_local.resize(pMultiBody->getNumLinks() + 1);
+
+	btAlignedObjectArray<btVector3> local_origin;
+	local_origin.resize(pMultiBody->getNumLinks() + 1);
+	world_to_local[0] = pMultiBody->getWorldToBaseRot();
+	local_origin[0] = pMultiBody->getBasePos();
+	
+	const btScalar friction = 0.1f;
+	{
+	//	float pos[4]={local_origin[0].x(),local_origin[0].y(),local_origin[0].z(),1};
+		btScalar quat[4]={-world_to_local[0].x(),-world_to_local[0].y(),-world_to_local[0].z(),world_to_local[0].w()};
+
+			
+		if (1)
+		{
+			btCollisionShape* box = new btBoxShape(baseHalfExtents);			
+			btMultiBodyLinkCollider* col= new btMultiBodyLinkCollider(pMultiBody, -1);			
+			col->setCollisionShape(box);
+								
+			btTransform tr;
+			tr.setIdentity();
+			tr.setOrigin(local_origin[0]);
+			tr.setRotation(btQuaternion(quat[0],quat[1],quat[2],quat[3]));			
+			col->setWorldTransform(tr);
+				
+			pWorld->addCollisionObject(col, 2,1+2);
+
+	
+
+			col->setFriction(friction);
+			pMultiBody->setBaseCollider(col);
+				
+		}
+	}
+
+
+	for (int i=0; i < pMultiBody->getNumLinks(); ++i)
+	{
+		const int parent = pMultiBody->getParent(i);
+		world_to_local[i+1] = pMultiBody->getParentToLocalRot(i) * world_to_local[parent+1];
+		local_origin[i+1] = local_origin[parent+1] + (quatRotate(world_to_local[i+1].inverse() , pMultiBody->getRVector(i)));
+	}
+
+		
+	for (int i=0; i < pMultiBody->getNumLinks(); ++i)
+	{
+		
+		btVector3 posr = local_origin[i+1];
+	//	float pos[4]={posr.x(),posr.y(),posr.z(),1};
+			
+		btScalar quat[4]={-world_to_local[i+1].x(),-world_to_local[i+1].y(),-world_to_local[i+1].z(),world_to_local[i+1].w()};
+
+		btCollisionShape* box = new btBoxShape(linkHalfExtents);
+		btMultiBodyLinkCollider* col = new btMultiBodyLinkCollider(pMultiBody, i);
+
+		col->setCollisionShape(box);
+		btTransform tr;
+		tr.setIdentity();
+		tr.setOrigin(posr);
+		tr.setRotation(btQuaternion(quat[0],quat[1],quat[2],quat[3]));
+		col->setWorldTransform(tr);
+		col->setFriction(friction);
+		pWorld->addCollisionObject(col,2,1+2);
+	
+			
+		pMultiBody->getLink(i).m_collider=col;		
+	}
+}
+
+CommonExampleInterface* TestWeiMBCreateFunc(CommonExampleOptions& options)
 {
 	return new TestWeiMultiBody(options.m_guiHelper, options.m_option);
 }
 
 
-B3_STANDALONE_EXAMPLE(TestWeiCreateFunc)
+B3_STANDALONE_EXAMPLE(TestWeiMBCreateFunc)

@@ -137,7 +137,7 @@ void	MultiDofDemo::initPhysics()
 	bool multibodyOnly = false;
 	bool canSleep = true;
 	bool selfCollide = true;
-    bool multibodyConstraint = false;
+    bool multibodyConstraint = true;
 	btVector3 linkHalfExtents(0.05, 0.37, 0.1);
 	btVector3 baseHalfExtents(0.05, 0.37, 0.1);
 
@@ -242,14 +242,15 @@ void	MultiDofDemo::initPhysics()
 
         if (multibodyConstraint) {
             btVector3 pointInA = -linkHalfExtents;
-      //      btVector3 pointInB = halfExtents;
+            btVector3 pointInB = halfExtents;
             btMatrix3x3 frameInA;
             btMatrix3x3 frameInB;
             frameInA.setIdentity();
             frameInB.setIdentity();
             btVector3 jointAxis(1.0,0.0,0.0);
             //btMultiBodySliderConstraint* p2p = new btMultiBodySliderConstraint(mbC,numLinks-1,body,pointInA,pointInB,frameInA,frameInB,jointAxis);
-            btMultiBodyFixedConstraint* p2p = new btMultiBodyFixedConstraint(mbC,numLinks-1,mbC,numLinks-4,pointInA,pointInA,frameInA,frameInB);
+            //btMultiBodyFixedConstraint* p2p = new btMultiBodyFixedConstraint(mbC,numLinks-1,mbC,numLinks-4,pointInA,pointInA,frameInA,frameInB);
+            btMultiBodyFixedConstraint* p2p = new btMultiBodyFixedConstraint(mbC,numLinks-1,mbC,0,pointInA,pointInA,frameInA,frameInB);
             p2p->setMaxAppliedImpulse(2.0);
             m_dynamicsWorld->addMultiBodyConstraint(p2p);
         }

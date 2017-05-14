@@ -7,10 +7,13 @@
 
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "../CommonInterfaces/CommonParameterInterface.h"
+#include "../CommonInterfaces/CommonMultiBodyBase.h"
 
-class CommonExampleInterface* TestWeiCreateFunc(struct CommonExampleOptions& options);
+class CommonExampleInterface* TestWeiMBCreateFunc(struct CommonExampleOptions& options);
+class btMultiBody;
+class btMultiBodyDynamicsWorld;
 
-class TestWeiMultiBody : public CommonRigidBodyBase
+class TestWeiMultiBody : public CommonMultiBodyBase
 {
 public:
 	enum DemoSolverType
@@ -47,6 +50,9 @@ public:
 	void setupChainBridge(); 
 private:
 	void step(float deltaTime);
+	btMultiBody* createFeatherstoneMultiBody_testMultiDof(btMultiBodyDynamicsWorld *pWorld, int numLinks, const btVector3 &basePosition, const btVector3 &baseHalfExtents, const btVector3 &linkHalfExtents, bool spherical, bool floating);
+	void addColliders_testMultiDof(btMultiBody *pMultiBody, btMultiBodyDynamicsWorld *pWorld, const btVector3 &baseHalfExtents, const btVector3 &linkHalfExtents);
+	void spawnBox(const btTransform& initTrans, const btVector3& halfExt, const btScalar mass);
 private:
 	bool m_paused;
 	DemoSolverType m_solverType;

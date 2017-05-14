@@ -195,6 +195,8 @@ SET(BulletExampleBrowser_SRCS
 	../BasicDemo/BasicExample.h
 	../TestWei/TestWei.cpp
 	../TestWei/TestWei.h
+	../TestWei/TestWeiMultiBody.cpp
+	../TestWei/TestWeiMultiBody.h
 	../InverseDynamics/InverseDynamicsExample.cpp
 	../InverseDynamics/InverseDynamicsExample.h
 	../InverseKinematics/InverseKinematicsExample.cpp

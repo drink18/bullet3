@@ -11,6 +11,7 @@
 #include "../MultiThreadedDemo/MultiThreadedDemo.h"
 #include "../BasicDemo/BasicExample.h"
 #include "../TestWei/TestWei.h"
+#include "../TestWei/TestWeiMultiBody.h"
 #include "../Planar2D/Planar2D.h"
 #include "../Benchmarks/BenchmarkDemo.h"
 #include "../Importers/ImportObjDemo/ImportObjExample.h"
@@ -110,6 +111,8 @@ static ExampleEntry gDefaultExamples[] =
 	ExampleEntry(1, "Stress Test", "Heavy over light", TestWeiCreateFunc, TestWei::Wei_StressTest),
 	ExampleEntry(1, "Chain Stress Test", "Chain ", TestWeiCreateFunc, TestWei::Wei_StressChainTest),
 	ExampleEntry(1, "Chain Bridge", "Bridage made by chained box", TestWeiCreateFunc, TestWei::Wei_ChainBridge),
+	ExampleEntry(0, "TestWeiMultiBody"),
+	ExampleEntry(1, "Chain Bridge", "Bridage made by chained box", TestWeiMBCreateFunc),
 
 	ExampleEntry(0,"API"),
 

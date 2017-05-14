@@ -231,6 +231,14 @@ bool TestWei::keyboardCallback(int key, int state)
 		return false;
 	}
 
+	if (key == B3G_F7 && state == 0)
+	{
+		btTransform trans;
+		trans.setIdentity();
+		trans.setOrigin(btVector3(0, 7, 0));
+		spawnBox(trans, btVector3(0.5f, 0.5f, 0.5f), 50);
+	}
+
 	return CommonRigidBodyBase::keyboardCallback(key, state);
 }
 
@@ -539,19 +547,20 @@ void TestWei::setupChainBridge()
 	}
 	{
 		const btScalar pillarH = 6.0f;
+		const int numChain = 6;
+		const btScalar chainHalfLen = 0.5f;
+		const btScalar chainMass = 1.0f;
+		btScalar bridgeLen = numChain * chainHalfLen * 2 - 0.2f;
 		btBoxShape* bigBox = new btBoxShape(btVector3(1, pillarH / 2, 1));
 		btTransform trans; trans.setIdentity();
-		trans.setOrigin(btVector3(-4, pillarH / 2, 0));
+		trans.setOrigin(btVector3(-bridgeLen/ 2 - 1.0f, pillarH / 2, 0));
 		btRigidBody* pillarA = createRigidBody(0, trans, bigBox);
-		trans.setOrigin(btVector3(4, pillarH / 2, 0));
+		trans.setOrigin(btVector3(bridgeLen / 2 + 1.0f, pillarH / 2, 0));
 		btRigidBody* pillarB = createRigidBody(0, trans, bigBox);
 		btRigidBody* lastChain = pillarA;
 		btRigidBody* firstChain = nullptr;
 
-		const btScalar chainHalfLen = 0.5f;
-		const btScalar chainMass = 1.0f;
-		btBoxShape* chainShape = new btBoxShape(btVector3(chainHalfLen, 0.05f, 0.35f));
-		const int numChain = 6;
+		btBoxShape* chainShape = new btBoxShape(btVector3(chainHalfLen, 0.05f, 0.5f));
 		btTransform chainTrans; chainTrans.setIdentity();
 		chainTrans.setOrigin(btVector3(-2.0f, pillarH, 0));
 		for (int i = 0; i < numChain; ++i)
@@ -581,14 +590,13 @@ void TestWei::setupChainBridge()
 			btVector3(0, 0, 1), btVector3(0, 0, 1));
 		m_dynamicsWorld->addConstraint(hingeB);
 	}
-	{
-		// drop a heavy box
-		btBoxShape* box = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f));
-		btTransform trans; trans.setIdentity();
-		trans.setOrigin(btVector3(0, 10.0f, 0));
-		const btScalar mass = 50.0f;
-		createRigidBody(mass, trans, box);
-	}
+}
+
+void TestWei::spawnBox(const btTransform& initTrans, const btVector3& halfExt, const btScalar mass)
+{
+	btBoxShape* shape = new btBoxShape(halfExt);
+	createRigidBody(mass, initTrans, shape);
+	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
 CommonExampleInterface* TestWeiCreateFunc(CommonExampleOptions& options)
