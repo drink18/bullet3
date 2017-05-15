@@ -52,7 +52,7 @@ private:
 	void step(float deltaTime);
 	btMultiBody* createFeatherstoneMultiBody_testMultiDof(btMultiBodyDynamicsWorld *pWorld, int numLinks, const btVector3 &basePosition, const btVector3 &baseHalfExtents, const btVector3 &linkHalfExtents, bool spherical, bool floating);
 	void addColliders_testMultiDof(btMultiBody *pMultiBody, btMultiBodyDynamicsWorld *pWorld, const btVector3 &baseHalfExtents, const btVector3 &linkHalfExtents);
-	void spawnBox(const btTransform& initTrans, const btVector3& halfExt, const btScalar mass);
+	void spawnBox(const btTransform& initTrans, const btVector3& halfExt);
 private:
 	bool m_paused;
 	DemoSolverType m_solverType;

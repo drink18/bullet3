@@ -55,6 +55,11 @@ namespace
 			world->getSolverInfo().m_numIterations = btMax(1, int(gSolverIterations));
 		}
 	}
+	btScalar gBoxMass = 10.0f;
+	void setBoxMassCallback(float val, void* userPtr)
+	{
+		gBoxMass = val;
+	}
 }
 
 
@@ -123,17 +128,17 @@ void TestWei::initPhysics()
 void TestWei::createUI()
 {
     // add buttons for switching to different solver types
-	for(int i  = 0 ; i < SovlerType_count; ++i)
-    {
+	for (int i = 0; i < SovlerType_count; ++i)
+	{
 		//char* buttonName = "Sequential impulse solver";
 		char buttonName[256];
 		DemoSolverType solverType = static_cast<DemoSolverType>(i);
 		sprintf(buttonName, "Solver: %s", getSolverTypeName(solverType));
-        ButtonParams button( buttonName, 0, false );
+		ButtonParams button(buttonName, 0, false);
 		button.m_buttonId = solverType;
-        button.m_callback = setSolverTypeCallback;
-        m_guiHelper->getParameterInterface()->registerButtonParameter( button );
-    }
+		button.m_callback = setSolverTypeCallback;
+		m_guiHelper->getParameterInterface()->registerButtonParameter(button);
+	}
 	{
 		// a slider for the number of solver iterations
 		SliderParams slider("Solver iterations", &gSolverIterations);
@@ -142,6 +147,14 @@ void TestWei::createUI()
 		slider.m_callback = setSolverIterationCountCallback;
 		slider.m_userPointer = m_dynamicsWorld;
 		slider.m_clampToIntegers = true;
+		m_guiHelper->getParameterInterface()->registerSliderFloatParameter(slider);
+	}
+	{
+		SliderParams slider("Box Mass", &gBoxMass);
+		slider.m_minVal = 10.0f;
+		slider.m_maxVal = 200.0f;
+		slider.m_userPointer = nullptr;
+		slider.m_callback = setBoxMassCallback;
 		m_guiHelper->getParameterInterface()->registerSliderFloatParameter(slider);
 	}
 }
@@ -218,13 +231,13 @@ void TestWei::step(float deltaTime)
 
 bool TestWei::keyboardCallback(int key, int state)
 {
-	if (key == B3G_F5)
+	if (key == B3G_F5 && state == 0)
 	{
 		m_paused = !m_paused;
 		return false;
 	}
 
-	if (key == B3G_F6)
+	if (key == B3G_F6 && state == 0)
 	{
 		m_paused = true;
 		step(1.0f / 60);
@@ -236,7 +249,7 @@ bool TestWei::keyboardCallback(int key, int state)
 		btTransform trans;
 		trans.setIdentity();
 		trans.setOrigin(btVector3(0, 7, 0));
-		spawnBox(trans, btVector3(0.5f, 0.5f, 0.5f), 50);
+		spawnBox(trans, btVector3(0.5f, 0.5f, 0.5f));
 	}
 
 	return CommonRigidBodyBase::keyboardCallback(key, state);
@@ -592,10 +605,10 @@ void TestWei::setupChainBridge()
 	}
 }
 
-void TestWei::spawnBox(const btTransform& initTrans, const btVector3& halfExt, const btScalar mass)
+void TestWei::spawnBox(const btTransform& initTrans, const btVector3& halfExt)
 {
 	btBoxShape* shape = new btBoxShape(halfExt);
-	createRigidBody(mass, initTrans, shape);
+	createRigidBody(gBoxMass, initTrans, shape);
 	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 

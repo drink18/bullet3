@@ -59,7 +59,7 @@ public:
 	void setupChainBridge(); 
 private:
 	void step(float deltaTime);
-	void spawnBox(const btTransform& initTrans, const btVector3& halfExt, const btScalar mass);
+	void spawnBox(const btTransform& initTrans, const btVector3& halfExt);
 private:
 	bool m_paused;
 	DemoSolverType m_solverType;

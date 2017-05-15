@@ -59,12 +59,17 @@ namespace
 		}
 	}
 
+	btScalar gBoxMass = 10.0f;
+	void setBoxMassCallback(float val, void* userPtr)
+	{
+		gBoxMass = val;
+	}
 }
 
-void TestWeiMultiBody::spawnBox(const btTransform& initTrans, const btVector3& halfExt, const btScalar mass)
+void TestWeiMultiBody::spawnBox(const btTransform& initTrans, const btVector3& halfExt)
 {
 	btBoxShape* shape = new btBoxShape(halfExt);
-	createRigidBody(mass, initTrans, shape);
+	createRigidBody(gBoxMass, initTrans, shape);
 	m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 }
 
@@ -116,17 +121,17 @@ void TestWeiMultiBody::initPhysics()
 void TestWeiMultiBody::createUI()
 {
     // add buttons for switching to different solver types
-	for(int i  = 0 ; i < SovlerType_count; ++i)
-    {
-		//char* buttonName = "Sequential impulse solver";
-		char buttonName[256];
-		DemoSolverType solverType = static_cast<DemoSolverType>(i);
-		sprintf(buttonName, "Solver: %s", getSolverTypeName(solverType));
-        ButtonParams button( buttonName, 0, false );
-		button.m_buttonId = solverType;
-        button.m_callback = setSolverTypeCallback;
-        m_guiHelper->getParameterInterface()->registerButtonParameter( button );
-    }
+	//for (int i = 0; i < SovlerType_count; ++i)
+	//{
+	//	//char* buttonName = "Sequential impulse solver";
+	//	char buttonName[256];
+	//	DemoSolverType solverType = static_cast<DemoSolverType>(i);
+	//	sprintf(buttonName, "Solver: %s", getSolverTypeName(solverType));
+	//	ButtonParams button(buttonName, 0, false);
+	//	button.m_buttonId = solverType;
+	//	button.m_callback = setSolverTypeCallback;
+	//	m_guiHelper->getParameterInterface()->registerButtonParameter(button);
+	//}
 	{
 		// a slider for the number of solver iterations
 		SliderParams slider("Solver iterations", &gSolverIterations);
@@ -135,6 +140,14 @@ void TestWeiMultiBody::createUI()
 		slider.m_callback = setSolverIterationCountCallback;
 		slider.m_userPointer = m_dynamicsWorld;
 		slider.m_clampToIntegers = true;
+		m_guiHelper->getParameterInterface()->registerSliderFloatParameter(slider);
+	}
+	{
+		SliderParams slider("Box Mass", &gBoxMass);
+		slider.m_minVal = 10.0f;
+		slider.m_maxVal = 200.0f;
+		slider.m_userPointer = nullptr;
+		slider.m_callback = setBoxMassCallback;
 		m_guiHelper->getParameterInterface()->registerSliderFloatParameter(slider);
 	}
 }
@@ -172,28 +185,7 @@ void TestWeiMultiBody::createEmptyDynamicsWorld()
 
 	m_broadphase = new btDbvtBroadphase();
 
-#if 0
-	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
-	m_solverType = gDemoSolverType;
-	switch (m_solverType)
-	{
-	case BT_SequentialSolver:
-		m_solver = new btSequentialImpulseConstraintSolver;
-		break;
-	case WeiSolver:
-		m_solver = new btWeiSISolver();
-		break;
-	case BT_MLCP:
-		m_solver = new btMLCPSolver(new btDantzigSolver());
-		break;
-	default:
-		break;
-	}
-#endif
-
-
 	m_dynamicsWorld = new btMultiBodyDynamicsWorld(m_dispatcher,m_broadphase, m_solver, m_collisionConfiguration);
-
 }
 
 void TestWeiMultiBody::stepSimulation(float deltaTime)
@@ -212,13 +204,13 @@ void TestWeiMultiBody::step(float deltaTime)
 
 bool TestWeiMultiBody::keyboardCallback(int key, int state)
 {
-	if (key == B3G_F5)
+	if (key == B3G_F5 && state == 0)
 	{
 		m_paused = !m_paused;
 		return false;
 	}
 
-	if (key == B3G_F6)
+	if (key == B3G_F6 && state == 0)
 	{
 		m_paused = true;
 		step(1.0f / 60);
@@ -230,7 +222,7 @@ bool TestWeiMultiBody::keyboardCallback(int key, int state)
 		btTransform trans;
 		trans.setIdentity();
 		trans.setOrigin(btVector3(0, 7, 0));
-		spawnBox(trans, btVector3(0.5f, 0.5f, 0.5f), 100);
+		spawnBox(trans, btVector3(0.5f, 0.5f, 0.5f)) ;
 	}
 
 	return CommonMultiBodyBase::keyboardCallback(key, state);
