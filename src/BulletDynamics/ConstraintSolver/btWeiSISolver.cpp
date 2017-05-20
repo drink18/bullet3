@@ -384,46 +384,47 @@ void btWeiSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* bod
 
 void btWeiSISolver::solveAllContacts(const btContactSolverInfo& info)
 {
-	for (int i = 0; i < info.m_numIterations; ++i)
+	for (int ic = 0; ic < m_tmpTypedConstraintPool.size(); ++ic)
 	{
-		for (int ic = 0; ic <  m_tmpTypedConstraintPool.size(); ++ic)
-		{
-			solve(m_tmpTypedConstraintPool[ic]);
-		}
+		solve(m_tmpTypedConstraintPool[ic]);
+	}
 
-		for (int ic = 0; ic < m_tmpContactConstraintPool.size(); ++ic)
+	for (int ic = 0; ic < m_tmpContactConstraintPool.size(); ++ic)
+	{
+		solve(m_tmpContactConstraintPool[ic]);
+	}
+
+	for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
+	{
 		{
-			solve(m_tmpContactConstraintPool[ic]);
-		}
-		
-		for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
-		{
+			btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
+			const int frictionIdx = c.m_frcitionIdx;
+			const btScalar impulse = m_tmpContactConstraintPool[frictionIdx].m_appliedImpulse;
+			if (impulse >= 0)
 			{
-				btSIConstraintInfo& c = m_tmpFrictionConstraintPool[ic];
-				const int frictionIdx = c.m_frcitionIdx;
-				const btScalar impulse = m_tmpContactConstraintPool[frictionIdx].m_appliedImpulse;
-				if (impulse >= 0)
-				{
-					c.m_lowerLimit = -c.m_friction * impulse;
-					c.m_upperLimit = c.m_friction * impulse;
-				}
+				c.m_lowerLimit = -c.m_friction * impulse;
+				c.m_upperLimit = c.m_friction * impulse;
 			}
-			solve(m_tmpFrictionConstraintPool[ic]);
 		}
-
+		solve(m_tmpFrictionConstraintPool[ic]);
 	}
 }
 
-void btWeiSISolver::solveAllPenetrations(const btContactSolverInfo& info)
+btScalar btWeiSISolver::solveSingleIteration(int iteration, btCollisionObject** /*bodies */, int /*numBodies*/, btPersistentManifold** /*manifoldPtr*/, int /*numManifolds*/, btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, btIDebugDraw* /*debugDrawer*/)
+{
+	solvePositionErrors(infoGlobal);
+	solveAllContacts(infoGlobal);
+
+	return 0;
+}
+
+void btWeiSISolver::solvePositionErrors(const btContactSolverInfo& info)
 {
 	const btScalar dt = info.m_timeStep;
-	for (int iter = 0; iter < info.m_numIterations; ++iter)
+	for (int ic = 0; ic < m_tmpContactConstraintPool.size(); ++ic)
 	{
-		for (int ic = 0; ic < m_tmpContactConstraintPool.size(); ++ic)
-		{
-			btSIConstraintInfo& c = m_tmpContactConstraintPool[ic];
-			solvePenetration(c, dt);
-		}
+		btSIConstraintInfo& c = m_tmpContactConstraintPool[ic];
+		solvePenetration(c, dt);
 	}
 }
 
@@ -493,12 +494,12 @@ btScalar btWeiSISolver::solveGroup(btCollisionObject** bodies, int numBodies, bt
 		setupAllContactConstraints(*manifold[i], info);
 	}
 
+	for (int iter = 0; iter < info.m_numIterations; ++iter)
+	{
+		solveSingleIteration(iter, bodies, numBodies, manifold, numManifolds, constraints, numConstraints,
+			info, debugDrawer);
+	}
 
-	// position error correction
-	solveAllPenetrations(info);
-
-	// solver contact constraint
-	solveAllContacts(info);
 
 	finishSolving(info);
 

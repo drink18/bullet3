@@ -149,10 +149,11 @@ protected:
 	int getOrAllocateAccumulator(btCollisionObject* btBody, const btContactSolverInfo& info);
 
 	void solveAllContacts(const btContactSolverInfo& info);
-	void solveAllPenetrations(const btContactSolverInfo& info);
+	void solvePositionErrors(const btContactSolverInfo& info);
 	void solve(btSIConstraintInfo& c);
 	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
 	void finishSolving(const btContactSolverInfo& info);
+	btScalar solveSingleIteration(int iteration, btCollisionObject** /*bodies */, int /*numBodies*/, btPersistentManifold** /*manifoldPtr*/, int /*numManifolds*/, btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, btIDebugDraw* /*debugDrawer*/);
 
 protected:
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpContactConstraintPool;
