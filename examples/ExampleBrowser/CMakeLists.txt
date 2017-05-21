@@ -351,6 +351,8 @@ SET(BulletExampleBrowser_SRCS
   ../Constraints/Dof6Spring2Setup.h
   ../Constraints/ConstraintPhysicsSetup.cpp
   ../Constraints/ConstraintPhysicsSetup.h
+  ../SoftDemo/SoftDemo.cpp
+  ../SoftDemo/SoftDemo.h
 
 
 	../ThirdPartyLibs/stb_image/stb_image.cpp
@@ -371,6 +373,7 @@ SET(BulletExampleBrowser_SRCS
 )
 
 
+ADD_DEFINITIONS(-DINCLUDE_CLOTH_DEMOS) 
 
 ADD_EXECUTABLE(App_ExampleBrowser
 		main.cpp
