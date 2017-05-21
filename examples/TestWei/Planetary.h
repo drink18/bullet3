@@ -8,7 +8,7 @@
 #include "../CommonInterfaces/CommonRigidBodyBase.h"
 #include "../CommonInterfaces/CommonParameterInterface.h"
 
-class CommonExampleInterface* TestWeiCreateFunc(struct CommonExampleOptions& options);
+class CommonExampleInterface* PlanetaryCreateFunc(struct CommonExampleOptions& options);
 
 class Planetary: public CommonRigidBodyBase
 {
@@ -19,6 +19,7 @@ public:
 	virtual void initPhysics();
 	virtual void createEmptyDynamicsWorld();
 	btRigidBody* createKinematicBody(const btTransform& startTransform, btCollisionShape* shape);
+    void simulatePlanet(btRigidBody* planet);
 
 	void resetCamera()
 	{
@@ -27,7 +28,7 @@ public:
 
 	virtual bool keyboardCallback(int key, int state);
 
-	btRigidBody* m_planet;
+    btAlignedObjectArray<btRigidBody*> m_planets;
 };
 
 

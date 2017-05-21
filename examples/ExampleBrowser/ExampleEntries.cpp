@@ -53,6 +53,7 @@
 #include "../RoboticsLearning/KukaGraspExample.h"
 #include "../RoboticsLearning/GripperGraspExample.h"
 #include "../InverseKinematics/InverseKinematicsExample.h"
+#include "../TestWei/Planetary.h"
 
 #ifdef ENABLE_LUA
 #include "../LuaDemo/LuaPhysicsSetup.h"
@@ -113,6 +114,8 @@ static ExampleEntry gDefaultExamples[] =
 	ExampleEntry(1, "Chain Bridge", "Bridage made by chained box", TestWeiCreateFunc, TestWei::Wei_ChainBridge),
 	ExampleEntry(0, "TestWeiMultiBody"),
 	ExampleEntry(1, "Chain Bridge", "Bridage made by chained box", TestWeiMBCreateFunc),
+    ExampleEntry(0, "Wei's funny stuff"),
+    ExampleEntry(1, "Planetary", "Simulating planet movement", PlanetaryCreateFunc),
 
 	ExampleEntry(0,"API"),
 

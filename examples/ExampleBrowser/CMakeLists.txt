@@ -9,6 +9,7 @@ FILE(GLOB GwenGUISupport_SRCS  "GwenGUISupport/*" )
 FILE(GLOB GwenGUISupport_HDRS  "GwenGUISupport/*" )
 
 
+
 IF (WIN32)
         INCLUDE_DIRECTORIES(
                 ${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs/Glew
@@ -197,6 +198,8 @@ SET(BulletExampleBrowser_SRCS
 	../TestWei/TestWei.h
 	../TestWei/TestWeiMultiBody.cpp
 	../TestWei/TestWeiMultiBody.h
+    ../TestWei/Planetary.cpp
+    ../TestWei/Planetary.h
 	../InverseDynamics/InverseDynamicsExample.cpp
 	../InverseDynamics/InverseDynamicsExample.h
 	../InverseKinematics/InverseKinematicsExample.cpp
@@ -371,6 +374,7 @@ SET(BulletExampleBrowser_SRCS
 )
 
 
+ADD_DEFINITIONS(-DINCLUDE_CLOTH_DEMOS)
 
 ADD_EXECUTABLE(App_ExampleBrowser
 		main.cpp
