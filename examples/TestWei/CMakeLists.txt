@@ -66,6 +66,17 @@ SET(AppTestWeiMBGui_SRCS
 		../Utils/b3Clock.cpp
 )
 
+SET(AppPlanetaryGUI_SRCS
+		Planetary.h
+		Planetary.cpp
+        ${BULLET_PHYSICS_SOURCE_DIR}/build3/bullet.rc
+	../StandaloneMain/main_opengl_single_example.cpp
+        ../ExampleBrowser/OpenGLGuiHelper.cpp
+        ../ExampleBrowser/GL_ShapeDrawer.cpp
+        ../ExampleBrowser/CollisionShape2TriangleMesh.cpp
+		../Utils/b3Clock.cpp
+)
+
 #this define maps StandaloneExampleCreateFunc to the right 'CreateFunc'
 ADD_DEFINITIONS(-DB3_USE_STANDALONE_EXAMPLE)
 
@@ -105,6 +116,10 @@ ADD_EXECUTABLE(AppTestWeiGui
 
 ADD_EXECUTABLE(AppTestWeiMBGui
 				${AppTestWeiMBGui_SRCS}
+)
+
+ADD_EXECUTABLE(AppPlanetaryGui
+				${AppPlanetaryGUI_SRCS}
 )
 
 IF (INTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES)
