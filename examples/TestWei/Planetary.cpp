@@ -50,12 +50,13 @@ void Planetary::stepSimulation(float dt)
 	btVector3 v = m_planet->getWorldTransform().getOrigin();
 	v *= -1;
 	btScalar r = v.length();
+	const btScalar g = 1000.0f;
 	if (!btFuzzyZero(r))
 	{
 		v /= r;
+		btScalar r2 = r * r;
 
-		const btScalar g = 1.0f;
-		btVector3 f = v * g * r / m_planet->getInvMass();
+		btVector3 f = v * g / r2 / m_planet->getInvMass();
 		m_planet->applyCentralForce(f);
 	}
 
