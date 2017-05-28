@@ -14,6 +14,7 @@
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
+#include "BulletDynamics/ConstraintSolver/btNNCGConstraintSolver.h"
 
 
 
@@ -34,6 +35,9 @@ namespace
 			break;
 		case TestWei::BT_MLCP:
 			name = "MLCP solver";
+			break;
+		case TestWei::BT_NNCG:
+			name = "NNCG";
 			break;
 		default:
 			break;
@@ -204,6 +208,9 @@ void TestWei::createEmptyDynamicsWorld()
 		break;
 	case BT_MLCP:
 		m_solver = new btMLCPSolver(new btDantzigSolver());
+		break;
+	case BT_NNCG:
+		m_solver = new btNNCGConstraintSolver();
 		break;
 	default:
 		break;
