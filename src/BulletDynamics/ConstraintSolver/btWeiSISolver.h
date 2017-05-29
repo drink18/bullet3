@@ -148,9 +148,9 @@ protected:
 	void initAllAccumulators(btCollisionObject** bodies, int numBodies, const btContactSolverInfo& info);
 	int getOrAllocateAccumulator(btCollisionObject* btBody, const btContactSolverInfo& info);
 
-	void solveAllContacts(const btContactSolverInfo& info);
+	btScalar solveAllContacts(const btContactSolverInfo& info);
 	void solvePositionErrors(const btContactSolverInfo& info);
-	void solve(btSIConstraintInfo& c);
+	btScalar solve(btSIConstraintInfo& c);
 	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
 	void finishSolving(const btContactSolverInfo& info);
 	btScalar solveSingleIteration(int iteration, btCollisionObject** /*bodies */, int /*numBodies*/, btPersistentManifold** /*manifoldPtr*/, int /*numManifolds*/, btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, btIDebugDraw* /*debugDrawer*/);
@@ -161,4 +161,5 @@ protected:
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpTypedConstraintPool;
 	btAlignedObjectArray<btVelocityAccumulator> m_accumulatorPool;
     btIDebugDraw* m_debugDrawer;
+	btScalar m_leastResidualSquare;
 };

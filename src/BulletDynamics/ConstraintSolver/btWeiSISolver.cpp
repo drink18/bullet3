@@ -3,7 +3,8 @@
 #include "LinearMath/btIDebugDraw.h"
 
 btWeiSISolver::btWeiSISolver()
-    :m_debugDrawer(nullptr)
+    :m_debugDrawer(nullptr),
+	m_leastResidualSquare(0.0f)
 {
 
 }
@@ -40,7 +41,7 @@ void btWeiSISolver::solvePenetration(btSIConstraintInfo& c, btScalar dt)
 	}
 }
 
-void btWeiSISolver::solve(btSIConstraintInfo& c)
+btScalar btWeiSISolver::solve(btSIConstraintInfo& c)
 {
 	btVelocityAccumulator& accum1 = m_accumulatorPool[c.m_accumId1];
 	btVelocityAccumulator& accum2 = m_accumulatorPool[c.m_accumId2];
@@ -64,6 +65,8 @@ void btWeiSISolver::solve(btSIConstraintInfo& c)
 
 	accum1.applyDeltaImpulse(impulse, c.m_Jl1 * c.m_invM1, c.m_Ja1 * c.m_invI1);
 	accum2.applyDeltaImpulse(impulse, c.m_Jl2 * c.m_invM2, c.m_Ja2 * c.m_invI2);
+
+	return accuLambda;
 }
 
 namespace {
@@ -382,16 +385,19 @@ void btWeiSISolver::setupFrictionConstraint(btRigidBody* bodyA, btRigidBody* bod
 	}
 }
 
-void btWeiSISolver::solveAllContacts(const btContactSolverInfo& info)
+btScalar btWeiSISolver::solveAllContacts(const btContactSolverInfo& info)
 {
+	btScalar residualSquare = 0.0f;
 	for (int ic = 0; ic < m_tmpTypedConstraintPool.size(); ++ic)
 	{
-		solve(m_tmpTypedConstraintPool[ic]);
+		btScalar error = solve(m_tmpTypedConstraintPool[ic]);
+		residualSquare += error * error;
 	}
 
 	for (int ic = 0; ic < m_tmpContactConstraintPool.size(); ++ic)
 	{
-		solve(m_tmpContactConstraintPool[ic]);
+		btScalar error = solve(m_tmpContactConstraintPool[ic]);
+		residualSquare += error * error;
 	}
 
 	for (int ic = 0; ic < m_tmpFrictionConstraintPool.size(); ++ic)
@@ -406,16 +412,18 @@ void btWeiSISolver::solveAllContacts(const btContactSolverInfo& info)
 				c.m_upperLimit = c.m_friction * impulse;
 			}
 		}
-		solve(m_tmpFrictionConstraintPool[ic]);
+		btScalar error = solve(m_tmpFrictionConstraintPool[ic]);
+		residualSquare += error * error;
 	}
+	return residualSquare;
 }
 
 btScalar btWeiSISolver::solveSingleIteration(int iteration, btCollisionObject** /*bodies */, int /*numBodies*/, btPersistentManifold** /*manifoldPtr*/, int /*numManifolds*/, btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, btIDebugDraw* /*debugDrawer*/)
 {
 	solvePositionErrors(infoGlobal);
-	solveAllContacts(infoGlobal);
+	btScalar residualSquare = solveAllContacts(infoGlobal);
 
-	return 0;
+	return residualSquare;
 }
 
 void btWeiSISolver::solvePositionErrors(const btContactSolverInfo& info)
@@ -496,10 +504,9 @@ btScalar btWeiSISolver::solveGroup(btCollisionObject** bodies, int numBodies, bt
 
 	for (int iter = 0; iter < info.m_numIterations; ++iter)
 	{
-		solveSingleIteration(iter, bodies, numBodies, manifold, numManifolds, constraints, numConstraints,
-			info, debugDrawer);
+		m_leastResidualSquare = solveSingleIteration(iter, bodies, numBodies, manifold, numManifolds, 
+			constraints, numConstraints, info, debugDrawer);
 	}
-
 
 	finishSolving(info);
 
