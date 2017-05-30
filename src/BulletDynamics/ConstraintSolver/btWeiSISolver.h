@@ -24,6 +24,14 @@ public:
 	, int numManifolds, btTypedConstraint** constraints, int numConstraints
 	, const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
 	, btDispatcher* dispatcher);
+
+	virtual btScalar solveGroupCacheFriendlySetup(btCollisionObject** bodies, int numBodies, 
+			btPersistentManifold** manifoldPtr, int numManifolds, btTypedConstraint** constraints, int numConstraints,
+			const btContactSolverInfo& infoGlobal, btIDebugDraw* debugDrawer);
+
+	virtual btScalar solveGroupCacheFriendlyFinish(btCollisionObject** bodies,int numBodies,
+			const btContactSolverInfo& infoGlobal);
+
 	///clear internal cached data and reset random seed
 	virtual	void	reset();
 

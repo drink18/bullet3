@@ -482,10 +482,10 @@ void btWeiSISolver::finishSolving(const btContactSolverInfo& info)
 	}
 }
 
-btScalar btWeiSISolver::solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
-	, int numManifolds, btTypedConstraint** constraints, int numConstraints
-	, const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
-	, btDispatcher* dispatcher)
+
+btScalar btWeiSISolver::solveGroupCacheFriendlySetup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifoldPtr,
+		int numManifolds, btTypedConstraint** constraints, int numConstraints, 
+		const btContactSolverInfo& info, btIDebugDraw* debugDrawer)
 {
 	m_debugDrawer = debugDrawer;
 	const btScalar dt = info.m_timeStep;
@@ -499,8 +499,17 @@ btScalar btWeiSISolver::solveGroup(btCollisionObject** bodies, int numBodies, bt
 	setupAllTypedContraint(constraints, numConstraints, info);
 	for (int i = 0; i < numManifolds; ++i)
 	{
-		setupAllContactConstraints(*manifold[i], info);
+		setupAllContactConstraints(*manifoldPtr[i], info);
 	}
+	return 0.0f;
+}
+
+btScalar btWeiSISolver::solveGroup(btCollisionObject** bodies, int numBodies, btPersistentManifold** manifold
+	, int numManifolds, btTypedConstraint** constraints, int numConstraints
+	, const btContactSolverInfo& info, class btIDebugDraw* debugDrawer
+	, btDispatcher* dispatcher)
+{
+	solveGroupCacheFriendlySetup(bodies, numBodies, manifold, numManifolds, constraints, numConstraints, info, debugDrawer);
 
 	for (int iter = 0; iter < info.m_numIterations; ++iter)
 	{
@@ -508,10 +517,18 @@ btScalar btWeiSISolver::solveGroup(btCollisionObject** bodies, int numBodies, bt
 			constraints, numConstraints, info, debugDrawer);
 	}
 
-	finishSolving(info);
+	solveGroupCacheFriendlyFinish(bodies, numBodies, info);
 
 	return 0.0f;
 }
+
+btScalar btWeiSISolver::solveGroupCacheFriendlyFinish(btCollisionObject** bodies, int numBodies,
+	const btContactSolverInfo& infoGlobal)
+{
+	finishSolving(infoGlobal);
+	return 0.0f;
+}
+
 
 
 void btWeiSISolver::reset()
