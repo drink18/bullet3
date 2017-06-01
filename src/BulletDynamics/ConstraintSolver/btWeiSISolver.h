@@ -161,7 +161,8 @@ protected:
 	btScalar solve(btSIConstraintInfo& c);
 	void solvePenetration(btSIConstraintInfo& c, btScalar dt);
 	void finishSolving(const btContactSolverInfo& info);
-	btScalar solveSingleIteration(int iteration, btCollisionObject** /*bodies */, int /*numBodies*/, btPersistentManifold** /*manifoldPtr*/, int /*numManifolds*/, btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, btIDebugDraw* /*debugDrawer*/);
+	virtual btScalar solveSingleIteration(int iteration, btCollisionObject** /*bodies */, int /*numBodies*/, 
+		btPersistentManifold** /*manifoldPtr*/, int /*numManifolds*/, btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, btIDebugDraw* /*debugDrawer*/);
 
 protected:
 	btAlignedObjectArray<btSIConstraintInfo> m_tmpContactConstraintPool;

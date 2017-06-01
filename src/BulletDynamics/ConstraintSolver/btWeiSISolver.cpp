@@ -420,7 +420,6 @@ btScalar btWeiSISolver::solveAllContacts(const btContactSolverInfo& info)
 
 btScalar btWeiSISolver::solveSingleIteration(int iteration, btCollisionObject** /*bodies */, int /*numBodies*/, btPersistentManifold** /*manifoldPtr*/, int /*numManifolds*/, btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, btIDebugDraw* /*debugDrawer*/)
 {
-	solvePositionErrors(infoGlobal);
 	btScalar residualSquare = solveAllContacts(infoGlobal);
 
 	return residualSquare;
@@ -513,6 +512,7 @@ btScalar btWeiSISolver::solveGroup(btCollisionObject** bodies, int numBodies, bt
 
 	for (int iter = 0; iter < info.m_numIterations; ++iter)
 	{
+		solvePositionErrors(info);
 		m_leastResidualSquare = solveSingleIteration(iter, bodies, numBodies, manifold, numManifolds, 
 			constraints, numConstraints, info, debugDrawer);
 	}

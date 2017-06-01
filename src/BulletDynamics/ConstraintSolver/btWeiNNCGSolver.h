@@ -3,7 +3,7 @@
 #include "btWeiSISolver.h"
 
 
-ATTRIBUTE_ALIGNED16(class) btWeiNNCGConstraintSolver : btWeiSISolver
+ATTRIBUTE_ALIGNED16(class) btWeiNNCGConstraintSolver : public btWeiSISolver
 {
 
 protected:
@@ -22,7 +22,10 @@ protected:
 				int numBodies, const btContactSolverInfo& infoGlobal);
 	virtual btScalar solveSingleIteration(int iteration, btCollisionObject** bodies, int numBodies,
 				btPersistentManifold** manifoldPtr, int numManifolds, btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, btIDebugDraw* debugDrawer);
-	virtual btScalar solveGroupCacheFriendlySetup(btCollisionObject** bodies, int numBodies, 
+
+	void ClearDeltaImpulseBuffers();
+
+	virtual btScalar solveGroupCacheFriendlySetup(btCollisionObject** bodies, int numBodies,
 			btPersistentManifold** manifoldPtr, int numManifolds, 
 			btTypedConstraint** constraints, int numConstraints, const btContactSolverInfo& infoGlobal, 
 			btIDebugDraw* debugDrawer);

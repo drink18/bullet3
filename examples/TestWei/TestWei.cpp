@@ -15,6 +15,7 @@
 #include "BulletDynamics/MLCPSolvers/btLemkeSolver.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
 #include "BulletDynamics/ConstraintSolver/btNNCGConstraintSolver.h"
+#include "BulletDynamics/ConstraintSolver/btWeiNNCGSolver.h"
 
 
 
@@ -38,6 +39,9 @@ namespace
 			break;
 		case TestWei::BT_NNCG:
 			name = "NNCG";
+			break;
+		case TestWei::BT_WEI_NNCG:
+			name = "WeiNNCG";
 			break;
 		default:
 			break;
@@ -211,6 +215,9 @@ void TestWei::createEmptyDynamicsWorld()
 		break;
 	case BT_NNCG:
 		m_solver = new btNNCGConstraintSolver();
+		break;
+	case BT_WEI_NNCG:
+		m_solver = new btWeiNNCGConstraintSolver();
 		break;
 	default:
 		break;

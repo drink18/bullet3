@@ -19,6 +19,7 @@ public:
 		WeiSolver = 1,
 		BT_MLCP = 2,
 		BT_NNCG = 3,
+		BT_WEI_NNCG = 4,
 		SovlerType_count
 	};
 
